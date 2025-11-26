@@ -33,78 +33,101 @@ export const CapsuleCard: React.FC<CapsuleCardProps> = ({
   const styles = colorStyles[note.color];
   const hasTitle = note.title && note.title.trim().length > 0;
   
-  const [showDeleteOverlay, setShowDeleteOverlay] = useState(false);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // 滑动相关状态
+  const [translateX, setTranslateX] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const touchStartX = useRef<number | null>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
 
-  // 点击处理
-  const handleClick = (e: React.MouseEvent) => {
-    // 如果正在显示删除遮罩，不处理点击
-    if (showDeleteOverlay) return;
+  const DELETE_BTN_WIDTH = 80; // 删除按钮的宽度
+  const SWIPE_THRESHOLD = 40;  // 触发吸附的阈值
+
+  // 触摸开始
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (isSelectionMode) return;
+    touchStartX.current = e.touches[0].clientX;
+    setIsDragging(false);
+  };
+
+  // 触摸移动
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (isSelectionMode || touchStartX.current === null) return;
     
+    const currentX = e.touches[0].clientX;
+    const diff = currentX - touchStartX.current;
+
+    // 逻辑：
+    // 1. 如果当前是关闭状态 (translateX === 0)，只允许向左滑 (diff < 0)
+    // 2. 如果当前是打开状态 (translateX === -DELETE_BTN_WIDTH)，允许向右滑关闭 (diff > 0)
+    
+    let newTranslate = 0;
+    
+    // 正在向左滑
+    if (translateX === 0 && diff < 0) {
+        newTranslate = Math.max(diff, -100); // 限制最大滑动距离
+        setIsDragging(true);
+        setTranslateX(newTranslate);
+    } 
+    // 正在向右滑（复位）
+    else if (translateX < 0 && diff > 0) {
+        newTranslate = Math.min(translateX + diff, 0);
+        setIsDragging(true);
+        setTranslateX(newTranslate);
+    }
+  };
+
+  // 触摸结束
+  const handleTouchEnd = () => {
+    if (isSelectionMode) return;
+    touchStartX.current = null;
+    setIsDragging(false);
+
+    // 吸附逻辑
+    if (translateX < -SWIPE_THRESHOLD) {
+        // 超过阈值，展开删除按钮
+        setTranslateX(-DELETE_BTN_WIDTH);
+    } else {
+        // 未超过阈值，复位
+        setTranslateX(0);
+    }
+  };
+
+  // 点击卡片本体
+  const handleClick = (e: React.MouseEvent) => {
     if (isSelectionMode) {
       e.stopPropagation();
       onToggleSelect(note.id);
-    } else {
-      onClick(note);
+      return;
     }
-  };
 
-  // 长按逻辑 (仅在非选择模式下生效)
-  const handleStart = () => {
-    if (isSelectionMode) return; // 选择模式下禁用长按
-
-    timerRef.current = setTimeout(() => {
-      if (window.navigator && window.navigator.vibrate) {
-        window.navigator.vibrate(50); // 震动反馈
-      }
-      setShowDeleteOverlay(true);
-    }, 600); // 600ms 长按触发
-  };
-
-  const handleEnd = () => {
-    if (timerRef.current) {
-      clearTimeout(timerRef.current);
-      timerRef.current = null;
+    // 如果处于打开状态，点击则关闭，不触发编辑
+    if (translateX !== 0) {
+        e.stopPropagation();
+        setTranslateX(0);
+        return;
     }
+
+    onClick(note);
   };
 
-  const handleConfirmDelete = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  // 点击删除按钮
+  const handleDeleteClick = (e: React.MouseEvent) => {
+    e.stopPropagation(); // 阻止冒泡
     if (onDelete) {
-      onDelete(note.id);
+        // 增加震动反馈
+        if (window.navigator && window.navigator.vibrate) {
+            window.navigator.vibrate(50);
+        }
+        onDelete(note.id);
     }
-    setShowDeleteOverlay(false);
+    setTranslateX(0);
   };
 
-  const handleCancelOverlay = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setShowDeleteOverlay(false);
-  };
-
-  // 渲染覆盖层
-  const renderOverlay = () => {
-    if (!showDeleteOverlay) return null;
-    return (
-      <div 
-        className="absolute inset-0 bg-slate-900/80 dark:bg-black/80 z-20 rounded-xl flex items-center justify-center animate-in fade-in duration-200 backdrop-blur-sm"
-        onClick={handleCancelOverlay}
-      >
-        <button 
-          onClick={handleConfirmDelete}
-          className="flex flex-col items-center gap-2 text-white p-4 rounded-full bg-red-600 hover:bg-red-700 transition-colors shadow-lg scale-110"
-        >
-          <Trash2 size={28} />
-          <span className="text-xs font-bold">点击删除</span>
-        </button>
-      </div>
-    );
-  };
-
-  // 选择框渲染
+  // 复选框
   const renderCheckbox = () => {
     if (!isSelectionMode) return null;
     return (
-      <div className={`absolute top-2 right-2 z-10 transition-transform duration-200 ${isSelected ? 'scale-110' : 'scale-100'}`}>
+      <div className={`absolute top-2 right-2 z-20 transition-transform duration-200 ${isSelected ? 'scale-110' : 'scale-100'}`}>
         {isSelected ? (
           <CheckCircle2 className="w-6 h-6 text-blue-600 dark:text-blue-400 fill-blue-100 dark:fill-blue-900/20" />
         ) : (
@@ -118,64 +141,37 @@ export const CapsuleCard: React.FC<CapsuleCardProps> = ({
     ? 'ring-2 ring-blue-500 dark:ring-blue-400 border-transparent' 
     : '';
 
-  if (viewMode === 'list') {
-    return (
-      <div 
-        onClick={handleClick}
-        onMouseDown={handleStart}
-        onMouseUp={handleEnd}
-        onMouseLeave={handleEnd}
-        onTouchStart={handleStart}
-        onTouchEnd={handleEnd}
-        onTouchMove={handleEnd} // 滑动时取消长按
-        className={`group relative px-4 py-3 rounded-xl border transition-all duration-200 active:scale-[0.98] ${styles} ${selectionBorderClass} w-full flex flex-col justify-center min-h-[4.5rem] select-none overflow-hidden`}
-        style={{ WebkitUserSelect: 'none' }}
-      >
-        {renderOverlay()}
-        {renderCheckbox()}
-        <div className={`flex flex-col gap-0.5 ${isSelectionMode ? 'pr-8' : ''}`}>
-          {hasTitle ? (
-            <>
-                <div className="flex items-center justify-between gap-2">
-                    <h3 className="font-bold text-base truncate leading-snug flex-1">{note.title}</h3>
-                    <span className="text-[10px] opacity-40 font-mono flex-shrink-0 whitespace-nowrap">
-                        {new Date(note.updatedAt).toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' })}
-                    </span>
-                </div>
-                <p className="text-sm opacity-70 line-clamp-1 leading-snug font-medium pr-2">
-                    {note.content || '无内容'}
-                </p>
-            </>
-          ) : (
-            <div className="flex items-start justify-between gap-2">
-                <p className="text-base font-medium opacity-90 line-clamp-2 leading-snug flex-1">
-                    {note.content || '无内容'}
-                </p>
-                <span className="text-[10px] opacity-40 font-mono flex-shrink-0 whitespace-nowrap mt-1">
+  // 列表视图内容
+  const renderListContent = () => (
+    <div className={`flex flex-col gap-0.5 ${isSelectionMode ? 'pr-8' : ''}`}>
+      {hasTitle ? (
+        <>
+            <div className="flex items-center justify-between gap-2">
+                <h3 className="font-bold text-base truncate leading-snug flex-1">{note.title}</h3>
+                <span className="text-[10px] opacity-40 font-mono flex-shrink-0 whitespace-nowrap">
                     {new Date(note.updatedAt).toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' })}
                 </span>
             </div>
-          )}
+            <p className="text-sm opacity-70 line-clamp-1 leading-snug font-medium pr-2">
+                {note.content || '无内容'}
+            </p>
+        </>
+      ) : (
+        <div className="flex items-start justify-between gap-2">
+            <p className="text-base font-medium opacity-90 line-clamp-2 leading-snug flex-1">
+                {note.content || '无内容'}
+            </p>
+            <span className="text-[10px] opacity-40 font-mono flex-shrink-0 whitespace-nowrap mt-1">
+                {new Date(note.updatedAt).toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' })}
+            </span>
         </div>
-      </div>
-    );
-  }
+      )}
+    </div>
+  );
 
-  // Grid 模式
-  return (
-    <div 
-      onClick={handleClick}
-      onMouseDown={handleStart}
-      onMouseUp={handleEnd}
-      onMouseLeave={handleEnd}
-      onTouchStart={handleStart}
-      onTouchEnd={handleEnd}
-      onTouchMove={handleEnd}
-      className={`group relative p-5 rounded-3xl border transition-all duration-300 cursor-pointer shadow-sm hover:shadow-md active:scale-[0.98] ${styles} ${selectionBorderClass} h-full flex flex-col min-h-[160px] select-none overflow-hidden`}
-      style={{ WebkitUserSelect: 'none' }}
-    >
-      {renderOverlay()}
-      {renderCheckbox()}
+  // 网格视图内容
+  const renderGridContent = () => (
+    <>
       {hasTitle && (
           <h3 className={`font-bold text-lg mb-2 leading-tight ${isSelectionMode ? 'pr-6' : ''}`}>{note.title}</h3>
       )}
@@ -190,6 +186,48 @@ export const CapsuleCard: React.FC<CapsuleCardProps> = ({
           {new Date(note.updatedAt).toLocaleDateString('zh-CN')}
         </div>
       </div>
+    </>
+  );
+
+  // 公共样式
+  const containerClasses = viewMode === 'list'
+    ? `px-4 py-3 min-h-[4.5rem] flex flex-col justify-center`
+    : `p-5 h-full flex flex-col min-h-[160px]`;
+
+  return (
+    <div className={`relative w-full rounded-xl overflow-hidden group ${viewMode === 'grid' ? 'h-full' : ''}`}>
+        {/* 背景层：删除按钮 */}
+        <div className="absolute inset-y-0 right-0 bg-red-600 flex items-center justify-center rounded-xl" style={{ width: DELETE_BTN_WIDTH }}>
+             <button 
+                onClick={handleDeleteClick}
+                className="w-full h-full flex flex-col items-center justify-center text-white active:bg-red-700 transition-colors"
+             >
+                <Trash2 size={24} />
+             </button>
+        </div>
+
+        {/* 前景层：卡片内容 */}
+        <div 
+            ref={cardRef}
+            onClick={handleClick}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+            className={`
+                relative bg-white dark:bg-slate-900 border transition-transform
+                ${isDragging ? 'duration-0' : 'duration-300 ease-out'} 
+                ${styles} ${selectionBorderClass} ${containerClasses} rounded-xl
+                shadow-sm active:scale-[0.99] z-10
+            `}
+            style={{ 
+                transform: `translateX(${translateX}px)`,
+                WebkitUserSelect: 'none',
+                touchAction: 'pan-y' // 允许垂直滚动，接管水平滑动
+            }}
+        >
+            {renderCheckbox()}
+            {viewMode === 'list' ? renderListContent() : renderGridContent()}
+        </div>
     </div>
   );
 };
