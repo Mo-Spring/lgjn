@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useRef, useState } from 'react';
 import { Note, CapsuleColor } from '../types';
-import { Clock, Tag } from 'lucide-react';
+import { Clock, Trash2 } from 'lucide-react';
 
 interface CapsuleCardProps {
   note: Note;
   onClick: (note: Note) => void;
+  onDelete?: (id: string) => void;
   viewMode: 'grid' | 'list';
 }
 
@@ -17,27 +18,76 @@ const colorStyles: Record<CapsuleColor, string> = {
   slate:  'bg-white border-slate-200 text-slate-900 hover:border-slate-300 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-100 dark:hover:border-slate-700',
 };
 
-const tagStyles: Record<CapsuleColor, string> = {
-  blue:   'bg-blue-100/50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
-  purple: 'bg-purple-100/50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300',
-  green:  'bg-emerald-100/50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
-  rose:   'bg-rose-100/50 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300',
-  amber:  'bg-amber-100/50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
-  slate:  'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400',
-};
-
-export const CapsuleCard: React.FC<CapsuleCardProps> = ({ note, onClick, viewMode }) => {
+export const CapsuleCard: React.FC<CapsuleCardProps> = ({ note, onClick, onDelete, viewMode }) => {
   const styles = colorStyles[note.color];
-  const tagStyle = tagStyles[note.color];
   const hasTitle = note.title && note.title.trim().length > 0;
-  const hasTags = note.tags && note.tags.length > 0;
+  
+  const [showDeleteOverlay, setShowDeleteOverlay] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // 长按逻辑
+  const handleStart = () => {
+    timerRef.current = setTimeout(() => {
+      if (window.navigator && window.navigator.vibrate) {
+        window.navigator.vibrate(50); // 震动反馈
+      }
+      setShowDeleteOverlay(true);
+    }, 600); // 600ms 长按触发
+  };
+
+  const handleEnd = () => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+  };
+
+  const handleConfirmDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onDelete) {
+      onDelete(note.id);
+    }
+    setShowDeleteOverlay(false);
+  };
+
+  const handleCancelOverlay = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowDeleteOverlay(false);
+  };
+
+  // 渲染覆盖层
+  const renderOverlay = () => {
+    if (!showDeleteOverlay) return null;
+    return (
+      <div 
+        className="absolute inset-0 bg-slate-900/80 dark:bg-black/80 z-20 rounded-xl flex items-center justify-center animate-in fade-in duration-200 backdrop-blur-sm"
+        onClick={handleCancelOverlay}
+      >
+        <button 
+          onClick={handleConfirmDelete}
+          className="flex flex-col items-center gap-2 text-white p-4 rounded-full bg-red-600 hover:bg-red-700 transition-colors shadow-lg scale-110"
+        >
+          <Trash2 size={28} />
+          <span className="text-xs font-bold">删除</span>
+        </button>
+      </div>
+    );
+  };
 
   if (viewMode === 'list') {
     return (
       <div 
-        onClick={() => onClick(note)}
-        className={`group relative px-4 py-3 rounded-xl border transition-all duration-200 active:scale-[0.98] ${styles} w-full flex flex-col justify-center min-h-[4.5rem]`}
+        onClick={() => !showDeleteOverlay && onClick(note)}
+        onMouseDown={handleStart}
+        onMouseUp={handleEnd}
+        onMouseLeave={handleEnd}
+        onTouchStart={handleStart}
+        onTouchEnd={handleEnd}
+        onTouchMove={handleEnd} // 滑动时取消长按
+        className={`group relative px-4 py-3 rounded-xl border transition-all duration-200 active:scale-[0.98] ${styles} w-full flex flex-col justify-center min-h-[4.5rem] select-none`}
+        style={{ WebkitUserSelect: 'none' }}
       >
+        {renderOverlay()}
         <div className="flex flex-col gap-0.5">
           {hasTitle ? (
             <>
@@ -62,25 +112,24 @@ export const CapsuleCard: React.FC<CapsuleCardProps> = ({ note, onClick, viewMod
             </div>
           )}
         </div>
-        
-        {hasTags && (
-             <div className="mt-1.5 flex gap-1.5 overflow-hidden opacity-60">
-                {note.tags.slice(0, 3).map((tag, idx) => (
-                   <span key={idx} className="text-[10px] flex items-center gap-0.5">
-                     <span className="opacity-50">#</span>{tag}
-                   </span>
-                ))}
-             </div>
-        )}
       </div>
     );
   }
 
+  // Grid 模式
   return (
     <div 
-      onClick={() => onClick(note)}
-      className={`group relative p-5 rounded-3xl border transition-all duration-300 cursor-pointer shadow-sm hover:shadow-md active:scale-[0.98] ${styles} h-full flex flex-col min-h-[160px]`}
+      onClick={() => !showDeleteOverlay && onClick(note)}
+      onMouseDown={handleStart}
+      onMouseUp={handleEnd}
+      onMouseLeave={handleEnd}
+      onTouchStart={handleStart}
+      onTouchEnd={handleEnd}
+      onTouchMove={handleEnd}
+      className={`group relative p-5 rounded-3xl border transition-all duration-300 cursor-pointer shadow-sm hover:shadow-md active:scale-[0.98] ${styles} h-full flex flex-col min-h-[160px] select-none`}
+      style={{ WebkitUserSelect: 'none' }}
     >
+      {renderOverlay()}
       {hasTitle && (
           <h3 className="font-bold text-lg mb-2 leading-tight">{note.title}</h3>
       )}
@@ -89,17 +138,7 @@ export const CapsuleCard: React.FC<CapsuleCardProps> = ({ note, onClick, viewMod
         {note.content || '无内容...'}
       </p>
 
-      <div className="mt-auto pt-2 space-y-3">
-        {hasTags && (
-          <div className="flex flex-wrap gap-1.5">
-            {note.tags.map((tag, idx) => (
-              <span key={idx} className={`text-[10px] px-2 py-0.5 rounded-full flex items-center gap-1 ${tagStyle}`}>
-                <Tag size={8} /> {tag}
-              </span>
-            ))}
-          </div>
-        )}
-        
+      <div className="mt-auto pt-2 flex items-center justify-between">
         <div className="flex items-center text-xs opacity-40 font-mono">
           <Clock size={10} className="mr-1" />
           {new Date(note.updatedAt).toLocaleDateString('zh-CN')}
