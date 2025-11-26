@@ -103,13 +103,15 @@ const App: React.FC = () => {
   };
 
   const handleDeleteNote = async (id: string) => {
-    if (confirm('确定要销毁这个灵感胶囊吗？')) {
-      setNotes(prev => prev.filter(n => n.id !== id));
-      try {
+    // 增加震动反馈
+    if (window.navigator && window.navigator.vibrate) {
+        window.navigator.vibrate(50);
+    }
+    setNotes(prev => prev.filter(n => n.id !== id));
+    try {
         await storage.deleteNote(id);
-      } catch (error) {
+    } catch (error) {
         console.error("Failed to delete note from DB:", error);
-      }
     }
   };
 
@@ -201,8 +203,7 @@ const App: React.FC = () => {
         const lowerQ = deferredSearchQuery.toLowerCase();
         result = result.filter(n => 
             n.title.toLowerCase().includes(lowerQ) || 
-            n.content.toLowerCase().includes(lowerQ) ||
-            n.tags.some(t => t.toLowerCase().includes(lowerQ))
+            n.content.toLowerCase().includes(lowerQ)
         );
     }
     return result;
@@ -210,7 +211,7 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 transition-colors duration-300 flex flex-col font-sans">
-      <header className="sticky top-0 z-30 bg-slate-50/80 dark:bg-slate-950/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800">
+      <header className="sticky top-0 z-30 bg-slate-50/95 dark:bg-slate-950/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="bg-slate-900 dark:bg-indigo-500 text-white p-1.5 rounded-lg">
@@ -265,7 +266,9 @@ const App: React.FC = () => {
             </button>
           </div>
         </div>
-        <div className="md:hidden px-4 pb-3">
+        
+        {/* 移动端搜索框 */}
+        <div className="md:hidden px-4 pb-2">
             <div className="flex items-center bg-white dark:bg-slate-900 px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
                 <Search size={18} className="text-slate-400 mr-2" />
                 <input 
@@ -277,10 +280,10 @@ const App: React.FC = () => {
                 />
              </div>
         </div>
-      </header>
 
-      <div className="sticky top-[8rem] md:top-16 z-20 bg-slate-50/95 dark:bg-slate-950/95 backdrop-blur-sm border-b border-slate-200/50 dark:border-slate-800/50 overflow-hidden shadow-sm">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex items-center gap-2 overflow-x-auto no-scrollbar">
+        {/* 分类栏 - 移入Header内部彻底消除缝隙 */}
+        <div className="border-t border-slate-200/50 dark:border-slate-800/50 overflow-hidden">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex items-center gap-2 overflow-x-auto no-scrollbar">
                 <button 
                     onClick={() => setSelectedCategoryId('all')}
                     className={`whitespace-nowrap px-3 py-1 rounded-lg text-sm font-medium transition-all ${selectedCategoryId === 'all' ? 'bg-slate-800 text-white dark:bg-white dark:text-slate-900 shadow-md scale-105' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
@@ -311,8 +314,9 @@ const App: React.FC = () => {
                 >
                     <FolderPlus size={16} />
                 </button>
-          </div>
-      </div>
+            </div>
+        </div>
+      </header>
 
       <main className="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-28 w-full">
         {loading ? (
@@ -343,6 +347,7 @@ const App: React.FC = () => {
                           key={note.id} 
                           note={note} 
                           onClick={handleEditNote}
+                          onDelete={handleDeleteNote}
                           viewMode={viewMode}
                         />
                       ))}
