@@ -1,3 +1,4 @@
+
 import React, { useRef, useState } from 'react';
 import { Note, CapsuleColor } from '../types';
 import { Clock, Trash2, CheckCircle2, Circle } from 'lucide-react';
@@ -33,19 +34,22 @@ export const CapsuleCard: React.FC<CapsuleCardProps> = ({
   const styles = colorStyles[note.color];
   const hasTitle = note.title && note.title.trim().length > 0;
   
-  // 滑动相关状态
+  // 增大按钮宽度，适应手机操作
+  const DELETE_BTN_WIDTH = 100; 
+  
+  // 状态
   const [translateX, setTranslateX] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
+  
+  // 使用 ref 记录触摸起始数据，避免闭包陷阱和状态更新延迟
   const touchStartX = useRef<number | null>(null);
-  const cardRef = useRef<HTMLDivElement>(null);
-
-  const DELETE_BTN_WIDTH = 80; // 删除按钮的宽度
-  const SWIPE_THRESHOLD = 40;  // 触发吸附的阈值
+  const startTranslateX = useRef<number>(0);
 
   // 触摸开始
   const handleTouchStart = (e: React.TouchEvent) => {
     if (isSelectionMode) return;
     touchStartX.current = e.touches[0].clientX;
+    startTranslateX.current = translateX; // 记录按下时的位置（可能是0，也可能是已展开状态）
     setIsDragging(false);
   };
 
@@ -55,25 +59,18 @@ export const CapsuleCard: React.FC<CapsuleCardProps> = ({
     
     const currentX = e.touches[0].clientX;
     const diff = currentX - touchStartX.current;
+    
+    // 计算目标位置：起始位置 + 移动距离
+    let newTranslate = startTranslateX.current + diff;
 
-    // 逻辑：
-    // 1. 如果当前是关闭状态 (translateX === 0)，只允许向左滑 (diff < 0)
-    // 2. 如果当前是打开状态 (translateX === -DELETE_BTN_WIDTH)，允许向右滑关闭 (diff > 0)
-    
-    let newTranslate = 0;
-    
-    // 正在向左滑
-    if (translateX === 0 && diff < 0) {
-        newTranslate = Math.max(diff, -100); // 限制最大滑动距离
-        setIsDragging(true);
-        setTranslateX(newTranslate);
-    } 
-    // 正在向右滑（复位）
-    else if (translateX < 0 && diff > 0) {
-        newTranslate = Math.min(translateX + diff, 0);
-        setIsDragging(true);
-        setTranslateX(newTranslate);
-    }
+    // 边界限制：
+    // 不能向右滑超过0（关闭状态）
+    // 不能向左滑超过按钮宽度（完全展开状态）
+    if (newTranslate > 0) newTranslate = 0;
+    if (newTranslate < -DELETE_BTN_WIDTH) newTranslate = -DELETE_BTN_WIDTH;
+
+    setIsDragging(true);
+    setTranslateX(newTranslate);
   };
 
   // 触摸结束
@@ -82,12 +79,10 @@ export const CapsuleCard: React.FC<CapsuleCardProps> = ({
     touchStartX.current = null;
     setIsDragging(false);
 
-    // 吸附逻辑
-    if (translateX < -SWIPE_THRESHOLD) {
-        // 超过阈值，展开删除按钮
+    // 吸附逻辑：如果拉动超过按钮宽度的一半，则自动展开；否则回弹关闭
+    if (translateX < -(DELETE_BTN_WIDTH / 2)) {
         setTranslateX(-DELETE_BTN_WIDTH);
     } else {
-        // 未超过阈值，复位
         setTranslateX(0);
     }
   };
@@ -100,7 +95,7 @@ export const CapsuleCard: React.FC<CapsuleCardProps> = ({
       return;
     }
 
-    // 如果处于打开状态，点击则关闭，不触发编辑
+    // 如果处于打开状态，点击任意位置都是关闭
     if (translateX !== 0) {
         e.stopPropagation();
         setTranslateX(0);
@@ -202,13 +197,12 @@ export const CapsuleCard: React.FC<CapsuleCardProps> = ({
                 onClick={handleDeleteClick}
                 className="w-full h-full flex flex-col items-center justify-center text-white active:bg-red-700 transition-colors"
              >
-                <Trash2 size={24} />
+                <Trash2 size={28} />
              </button>
         </div>
 
         {/* 前景层：卡片内容 */}
         <div 
-            ref={cardRef}
             onClick={handleClick}
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
