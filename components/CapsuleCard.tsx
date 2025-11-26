@@ -68,7 +68,7 @@ export const CapsuleCard: React.FC<CapsuleCardProps> = ({ note, onClick, onDelet
           className="flex flex-col items-center gap-2 text-white p-4 rounded-full bg-red-600 hover:bg-red-700 transition-colors shadow-lg scale-110"
         >
           <Trash2 size={28} />
-          <span className="text-xs font-bold">删除</span>
+          <span className="text-xs font-bold">点击删除</span>
         </button>
       </div>
     );
@@ -84,7 +84,7 @@ export const CapsuleCard: React.FC<CapsuleCardProps> = ({ note, onClick, onDelet
         onTouchStart={handleStart}
         onTouchEnd={handleEnd}
         onTouchMove={handleEnd} // 滑动时取消长按
-        className={`group relative px-4 py-3 rounded-xl border transition-all duration-200 active:scale-[0.98] ${styles} w-full flex flex-col justify-center min-h-[4.5rem] select-none`}
+        className={`group relative px-4 py-3 rounded-xl border transition-all duration-200 active:scale-[0.98] ${styles} w-full flex flex-col justify-center min-h-[4.5rem] select-none overflow-hidden`}
         style={{ WebkitUserSelect: 'none' }}
       >
         {renderOverlay()}
@@ -126,7 +126,7 @@ export const CapsuleCard: React.FC<CapsuleCardProps> = ({ note, onClick, onDelet
       onTouchStart={handleStart}
       onTouchEnd={handleEnd}
       onTouchMove={handleEnd}
-      className={`group relative p-5 rounded-3xl border transition-all duration-300 cursor-pointer shadow-sm hover:shadow-md active:scale-[0.98] ${styles} h-full flex flex-col min-h-[160px] select-none`}
+      className={`group relative p-5 rounded-3xl border transition-all duration-300 cursor-pointer shadow-sm hover:shadow-md active:scale-[0.98] ${styles} h-full flex flex-col min-h-[160px] select-none overflow-hidden`}
       style={{ WebkitUserSelect: 'none' }}
     >
       {renderOverlay()}
