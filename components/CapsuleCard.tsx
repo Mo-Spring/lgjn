@@ -1,12 +1,15 @@
 import React, { useRef, useState } from 'react';
 import { Note, CapsuleColor } from '../types';
-import { Clock, Trash2 } from 'lucide-react';
+import { Clock, Trash2, CheckCircle2, Circle } from 'lucide-react';
 
 interface CapsuleCardProps {
   note: Note;
   onClick: (note: Note) => void;
   onDelete?: (id: string) => void;
   viewMode: 'grid' | 'list';
+  isSelectionMode: boolean;
+  isSelected: boolean;
+  onToggleSelect: (id: string) => void;
 }
 
 const colorStyles: Record<CapsuleColor, string> = {
@@ -18,15 +21,38 @@ const colorStyles: Record<CapsuleColor, string> = {
   slate:  'bg-white border-slate-200 text-slate-900 hover:border-slate-300 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-100 dark:hover:border-slate-700',
 };
 
-export const CapsuleCard: React.FC<CapsuleCardProps> = ({ note, onClick, onDelete, viewMode }) => {
+export const CapsuleCard: React.FC<CapsuleCardProps> = ({ 
+  note, 
+  onClick, 
+  onDelete, 
+  viewMode, 
+  isSelectionMode, 
+  isSelected, 
+  onToggleSelect 
+}) => {
   const styles = colorStyles[note.color];
   const hasTitle = note.title && note.title.trim().length > 0;
   
   const [showDeleteOverlay, setShowDeleteOverlay] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // 长按逻辑
+  // 点击处理
+  const handleClick = (e: React.MouseEvent) => {
+    // 如果正在显示删除遮罩，不处理点击
+    if (showDeleteOverlay) return;
+    
+    if (isSelectionMode) {
+      e.stopPropagation();
+      onToggleSelect(note.id);
+    } else {
+      onClick(note);
+    }
+  };
+
+  // 长按逻辑 (仅在非选择模式下生效)
   const handleStart = () => {
+    if (isSelectionMode) return; // 选择模式下禁用长按
+
     timerRef.current = setTimeout(() => {
       if (window.navigator && window.navigator.vibrate) {
         window.navigator.vibrate(50); // 震动反馈
@@ -74,21 +100,40 @@ export const CapsuleCard: React.FC<CapsuleCardProps> = ({ note, onClick, onDelet
     );
   };
 
+  // 选择框渲染
+  const renderCheckbox = () => {
+    if (!isSelectionMode) return null;
+    return (
+      <div className={`absolute top-2 right-2 z-10 transition-transform duration-200 ${isSelected ? 'scale-110' : 'scale-100'}`}>
+        {isSelected ? (
+          <CheckCircle2 className="w-6 h-6 text-blue-600 dark:text-blue-400 fill-blue-100 dark:fill-blue-900/20" />
+        ) : (
+          <Circle className="w-6 h-6 text-slate-400 dark:text-slate-500" />
+        )}
+      </div>
+    );
+  };
+
+  const selectionBorderClass = isSelectionMode && isSelected 
+    ? 'ring-2 ring-blue-500 dark:ring-blue-400 border-transparent' 
+    : '';
+
   if (viewMode === 'list') {
     return (
       <div 
-        onClick={() => !showDeleteOverlay && onClick(note)}
+        onClick={handleClick}
         onMouseDown={handleStart}
         onMouseUp={handleEnd}
         onMouseLeave={handleEnd}
         onTouchStart={handleStart}
         onTouchEnd={handleEnd}
         onTouchMove={handleEnd} // 滑动时取消长按
-        className={`group relative px-4 py-3 rounded-xl border transition-all duration-200 active:scale-[0.98] ${styles} w-full flex flex-col justify-center min-h-[4.5rem] select-none overflow-hidden`}
+        className={`group relative px-4 py-3 rounded-xl border transition-all duration-200 active:scale-[0.98] ${styles} ${selectionBorderClass} w-full flex flex-col justify-center min-h-[4.5rem] select-none overflow-hidden`}
         style={{ WebkitUserSelect: 'none' }}
       >
         {renderOverlay()}
-        <div className="flex flex-col gap-0.5">
+        {renderCheckbox()}
+        <div className={`flex flex-col gap-0.5 ${isSelectionMode ? 'pr-8' : ''}`}>
           {hasTitle ? (
             <>
                 <div className="flex items-center justify-between gap-2">
@@ -119,22 +164,23 @@ export const CapsuleCard: React.FC<CapsuleCardProps> = ({ note, onClick, onDelet
   // Grid 模式
   return (
     <div 
-      onClick={() => !showDeleteOverlay && onClick(note)}
+      onClick={handleClick}
       onMouseDown={handleStart}
       onMouseUp={handleEnd}
       onMouseLeave={handleEnd}
       onTouchStart={handleStart}
       onTouchEnd={handleEnd}
       onTouchMove={handleEnd}
-      className={`group relative p-5 rounded-3xl border transition-all duration-300 cursor-pointer shadow-sm hover:shadow-md active:scale-[0.98] ${styles} h-full flex flex-col min-h-[160px] select-none overflow-hidden`}
+      className={`group relative p-5 rounded-3xl border transition-all duration-300 cursor-pointer shadow-sm hover:shadow-md active:scale-[0.98] ${styles} ${selectionBorderClass} h-full flex flex-col min-h-[160px] select-none overflow-hidden`}
       style={{ WebkitUserSelect: 'none' }}
     >
       {renderOverlay()}
+      {renderCheckbox()}
       {hasTitle && (
-          <h3 className="font-bold text-lg mb-2 leading-tight">{note.title}</h3>
+          <h3 className={`font-bold text-lg mb-2 leading-tight ${isSelectionMode ? 'pr-6' : ''}`}>{note.title}</h3>
       )}
       
-      <p className={`text-sm opacity-80 mb-4 flex-grow whitespace-pre-line font-medium leading-relaxed ${hasTitle ? 'line-clamp-6' : 'line-clamp-[8] text-base'}`}>
+      <p className={`text-sm opacity-80 mb-4 flex-grow whitespace-pre-line font-medium leading-relaxed ${hasTitle ? 'line-clamp-6' : 'line-clamp-[8] text-base'} ${isSelectionMode && !hasTitle ? 'pr-6' : ''}`}>
         {note.content || '无内容...'}
       </p>
 
