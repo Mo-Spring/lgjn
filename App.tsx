@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useDeferredValue } from 'react';
-import { Search, BrainCircuit, Moon, Sun, Settings, FolderPlus, Folder, LayoutGrid, List, PenLine } from 'lucide-react';
+import { Search, BrainCircuit, Moon, Sun, Settings, FolderPlus, Folder, LayoutGrid, List, PenLine, CheckSquare, Trash2, X } from 'lucide-react';
 import { Note, Category } from './types';
 import { CapsuleCard } from './components/CapsuleCard';
 import { EditorModal } from './components/EditorModal';
@@ -33,6 +33,10 @@ const App: React.FC = () => {
     return 'grid';
   });
   
+  // 批量选择模式状态
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedNoteIds, setSelectedNoteIds] = useState<Set<string>>(new Set());
+
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [currentEditingNote, setCurrentEditingNote] = useState<Note | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -67,6 +71,13 @@ const App: React.FC = () => {
   useEffect(() => {
     localStorage.setItem(VIEW_MODE_STORAGE_KEY, viewMode);
   }, [viewMode]);
+
+  // 退出选择模式时清空选中项
+  useEffect(() => {
+    if (!isSelectionMode) {
+      setSelectedNoteIds(new Set());
+    }
+  }, [isSelectionMode]);
 
   const toggleTheme = () => {
     setTheme(prev => prev === 'light' ? 'dark' : 'light');
@@ -113,6 +124,43 @@ const App: React.FC = () => {
     } catch (error) {
         console.error("Failed to delete note from DB:", error);
     }
+  };
+
+  // 处理批量删除
+  const handleBatchDelete = async () => {
+    if (selectedNoteIds.size === 0) return;
+
+    if (confirm(`确定要删除选中的 ${selectedNoteIds.size} 个胶囊吗？`)) {
+      const idsToDelete = Array.from(selectedNoteIds);
+      
+      // 更新 UI
+      setNotes(prev => prev.filter(n => !selectedNoteIds.has(n.id)));
+      
+      // 并发删除数据库
+      try {
+        await Promise.all(idsToDelete.map(id => storage.deleteNote(id)));
+        setIsSelectionMode(false); // 退出选择模式
+      } catch (error) {
+        console.error("Batch delete failed:", error);
+        alert("部分删除失败");
+      }
+    }
+  };
+
+  const toggleSelectionMode = () => {
+    setIsSelectionMode(prev => !prev);
+  };
+
+  const handleToggleSelectNote = (id: string) => {
+    setSelectedNoteIds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
   };
 
   const handleAddCategory = async () => {
@@ -232,6 +280,7 @@ const App: React.FC = () => {
                   className="bg-transparent border-none outline-none text-sm w-full placeholder:text-slate-400 dark:text-slate-200"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
+                  disabled={isSelectionMode}
                 />
              </div>
 
@@ -251,6 +300,15 @@ const App: React.FC = () => {
                     <List size={18} />
                 </button>
              </div>
+
+            {/* 批量选择按钮 */}
+            <button 
+                onClick={toggleSelectionMode}
+                className={`p-2 transition-colors rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 ${isSelectionMode ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/20' : 'text-slate-500 dark:text-slate-400'}`}
+                title="批量选择"
+            >
+                <CheckSquare size={20} />
+            </button>
 
              <button 
                 onClick={toggleTheme}
@@ -278,6 +336,7 @@ const App: React.FC = () => {
                   className="bg-transparent border-none outline-none text-sm w-full dark:text-slate-200"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
+                  disabled={isSelectionMode}
                 />
              </div>
         </div>
@@ -287,13 +346,15 @@ const App: React.FC = () => {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex items-center gap-2 overflow-x-auto no-scrollbar">
                 <button 
                     onClick={() => setSelectedCategoryId('all')}
-                    className={`whitespace-nowrap px-3 py-1 rounded-lg text-sm font-medium transition-all ${selectedCategoryId === 'all' ? 'bg-slate-800 text-white dark:bg-white dark:text-slate-900 shadow-md scale-105' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
+                    disabled={isSelectionMode}
+                    className={`whitespace-nowrap px-3 py-1 rounded-lg text-sm font-medium transition-all ${selectedCategoryId === 'all' ? 'bg-slate-800 text-white dark:bg-white dark:text-slate-900 shadow-md scale-105' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'} ${isSelectionMode ? 'opacity-50' : ''}`}
                 >
                     全部
                 </button>
                 <button 
                     onClick={() => setSelectedCategoryId('uncategorized')}
-                    className={`whitespace-nowrap px-3 py-1 rounded-lg text-sm font-medium transition-all ${selectedCategoryId === 'uncategorized' ? 'bg-slate-800 text-white dark:bg-white dark:text-slate-900 shadow-md scale-105' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
+                    disabled={isSelectionMode}
+                    className={`whitespace-nowrap px-3 py-1 rounded-lg text-sm font-medium transition-all ${selectedCategoryId === 'uncategorized' ? 'bg-slate-800 text-white dark:bg-white dark:text-slate-900 shadow-md scale-105' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'} ${isSelectionMode ? 'opacity-50' : ''}`}
                 >
                     无分类
                 </button>
@@ -302,8 +363,9 @@ const App: React.FC = () => {
                     <button 
                         key={cat.id}
                         onClick={() => setSelectedCategoryId(cat.id)}
-                        onDoubleClick={() => handleDeleteCategory(cat.id)}
-                        className={`whitespace-nowrap px-3 py-1 rounded-lg text-sm font-medium transition-all flex items-center gap-1.5 ${selectedCategoryId === cat.id ? 'bg-slate-800 text-white dark:bg-white dark:text-slate-900 shadow-md scale-105' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
+                        onDoubleClick={() => !isSelectionMode && handleDeleteCategory(cat.id)}
+                        disabled={isSelectionMode}
+                        className={`whitespace-nowrap px-3 py-1 rounded-lg text-sm font-medium transition-all flex items-center gap-1.5 ${selectedCategoryId === cat.id ? 'bg-slate-800 text-white dark:bg-white dark:text-slate-900 shadow-md scale-105' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'} ${isSelectionMode ? 'opacity-50' : ''}`}
                     >
                         <Folder size={14} />
                         {cat.name}
@@ -311,7 +373,8 @@ const App: React.FC = () => {
                 ))}
                 <button 
                     onClick={handleAddCategory}
-                    className="whitespace-nowrap px-2.5 py-1 rounded-lg text-sm font-medium text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all flex items-center gap-1"
+                    disabled={isSelectionMode}
+                    className={`whitespace-nowrap px-2.5 py-1 rounded-lg text-sm font-medium text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all flex items-center gap-1 ${isSelectionMode ? 'opacity-50' : ''}`}
                 >
                     <FolderPlus size={16} />
                 </button>
@@ -350,6 +413,9 @@ const App: React.FC = () => {
                           onClick={handleEditNote}
                           onDelete={handleDeleteNote}
                           viewMode={viewMode}
+                          isSelectionMode={isSelectionMode}
+                          isSelected={selectedNoteIds.has(note.id)}
+                          onToggleSelect={handleToggleSelectNote}
                         />
                       ))}
                     </div>
@@ -367,13 +433,33 @@ const App: React.FC = () => {
 
       <div className="fixed bottom-0 left-0 right-0 px-4 pb-6 pt-4 bg-gradient-to-t from-slate-50 via-slate-50/95 to-transparent dark:from-slate-950 dark:via-slate-950/95 z-40 pointer-events-none pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
         <div className="max-w-md mx-auto pointer-events-auto">
-            <button 
-                onClick={handleCreateNew}
-                className="w-full bg-slate-900 dark:bg-indigo-600 text-white h-12 rounded-full shadow-xl shadow-slate-300/50 dark:shadow-black/50 flex items-center justify-center gap-2 text-base font-medium hover:scale-[1.02] active:scale-[0.98] transition-all"
-            >
-                <PenLine size={18} />
-                记录灵感
-            </button>
+            {isSelectionMode ? (
+                <div className="flex gap-3">
+                    <button 
+                        onClick={() => setIsSelectionMode(false)}
+                        className="flex-1 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 h-12 rounded-full shadow-lg border border-slate-200 dark:border-slate-700 flex items-center justify-center gap-2 text-base font-medium hover:bg-slate-50 dark:hover:bg-slate-700 active:scale-[0.98] transition-all"
+                    >
+                        <X size={18} />
+                        取消
+                    </button>
+                    <button 
+                        onClick={handleBatchDelete}
+                        disabled={selectedNoteIds.size === 0}
+                        className={`flex-[2] h-12 rounded-full shadow-xl flex items-center justify-center gap-2 text-base font-medium transition-all ${selectedNoteIds.size > 0 ? 'bg-red-600 text-white hover:bg-red-700 active:scale-[0.98] shadow-red-500/30' : 'bg-slate-300 dark:bg-slate-800 text-slate-500 cursor-not-allowed'}`}
+                    >
+                        <Trash2 size={18} />
+                        删除 ({selectedNoteIds.size})
+                    </button>
+                </div>
+            ) : (
+                <button 
+                    onClick={handleCreateNew}
+                    className="w-full bg-slate-900 dark:bg-indigo-600 text-white h-12 rounded-full shadow-xl shadow-slate-300/50 dark:shadow-black/50 flex items-center justify-center gap-2 text-base font-medium hover:scale-[1.02] active:scale-[0.98] transition-all"
+                >
+                    <PenLine size={18} />
+                    记录灵感
+                </button>
+            )}
         </div>
       </div>
 
