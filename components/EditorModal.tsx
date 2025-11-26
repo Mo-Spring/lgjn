@@ -18,8 +18,6 @@ export const EditorModal: React.FC<EditorModalProps> = ({ note, isOpen, onClose,
   const [content, setContent] = useState('');
   const [selectedColor, setSelectedColor] = useState<CapsuleColor>('blue');
   const [categoryId, setCategoryId] = useState<string>('');
-  const [tags, setTags] = useState<string[]>([]);
-  const [currentTag, setCurrentTag] = useState('');
   
   const modalRef = useRef<HTMLDivElement>(null);
 
@@ -29,13 +27,11 @@ export const EditorModal: React.FC<EditorModalProps> = ({ note, isOpen, onClose,
         setTitle(note.title);
         setContent(note.content);
         setSelectedColor(note.color);
-        setTags(note.tags || []);
         setCategoryId(note.categoryId || '');
       } else {
         setTitle('');
         setContent('');
         setSelectedColor(COLORS[Math.floor(Math.random() * COLORS.length)]);
-        setTags([]);
         setCategoryId('');
       }
     }
@@ -53,23 +49,12 @@ export const EditorModal: React.FC<EditorModalProps> = ({ note, isOpen, onClose,
       title: title.trim(),
       content: content.trim(),
       color: selectedColor,
-      tags: tags,
       categoryId: categoryId || undefined,
       createdAt: note ? note.createdAt : Date.now(),
       updatedAt: Date.now(),
     };
     onSave(newNote);
     onClose();
-  };
-
-  const handleAddTag = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && currentTag.trim()) {
-        e.preventDefault();
-        if (!tags.includes(currentTag.trim())) {
-            setTags([...tags, currentTag.trim()]);
-        }
-        setCurrentTag('');
-    }
   };
 
   const getColorClass = (c: CapsuleColor) => {
@@ -151,33 +136,9 @@ export const EditorModal: React.FC<EditorModalProps> = ({ note, isOpen, onClose,
             placeholder="捕捉你的灵感..."
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            className="w-full h-[calc(100%-180px)] resize-none text-lg leading-relaxed bg-transparent border-none outline-none placeholder:text-slate-300 dark:placeholder:text-slate-600 text-slate-700 dark:text-slate-300 font-medium"
+            className="w-full h-full resize-none text-lg leading-relaxed bg-transparent border-none outline-none placeholder:text-slate-300 dark:placeholder:text-slate-600 text-slate-700 dark:text-slate-300 font-medium pb-20"
             spellCheck={false}
           />
-          
-          <div className="pt-2">
-             <input 
-                type="text" 
-                placeholder="添加标签 (按回车)..."
-                value={currentTag}
-                onChange={(e) => setCurrentTag(e.target.value)}
-                onKeyDown={handleAddTag}
-                className="text-sm bg-transparent outline-none text-slate-600 dark:text-slate-400 placeholder:text-slate-300 dark:placeholder:text-slate-600 mb-2 w-full"
-             />
-             <div className="flex flex-wrap gap-2">
-                {tags.map((tag, i) => (
-                    <span key={i} className="px-3 py-1 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-full text-sm flex items-center gap-1 group">
-                    <span className="opacity-50">#</span> {tag}
-                    <button 
-                        onClick={() => setTags(tags.filter(t => t !== tag))}
-                        className="ml-1 text-slate-400 hover:text-red-500 dark:hover:text-red-400"
-                    >
-                        &times;
-                    </button>
-                    </span>
-                ))}
-            </div>
-          </div>
         </div>
 
         <div className="px-6 py-4 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-3">
