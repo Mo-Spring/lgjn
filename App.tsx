@@ -211,8 +211,9 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 transition-colors duration-300 flex flex-col font-sans">
-      <header className="sticky top-0 z-30 bg-slate-50/95 dark:bg-slate-950/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <header className="sticky top-0 z-30 bg-slate-50/95 dark:bg-slate-950/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 shadow-sm flex flex-col">
+        {/* Top Bar */}
+        <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2">
             <div className="bg-slate-900 dark:bg-indigo-500 text-white p-1.5 rounded-lg">
                <BrainCircuit size={20} />
@@ -267,8 +268,8 @@ const App: React.FC = () => {
           </div>
         </div>
         
-        {/* 移动端搜索框 */}
-        <div className="md:hidden px-4 pb-2">
+        {/* Mobile Search Box - Inside Header to be sticky */}
+        <div className="md:hidden px-4 pb-2 w-full max-w-7xl mx-auto">
             <div className="flex items-center bg-white dark:bg-slate-900 px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
                 <Search size={18} className="text-slate-400 mr-2" />
                 <input 
@@ -281,8 +282,8 @@ const App: React.FC = () => {
              </div>
         </div>
 
-        {/* 分类栏 - 移入Header内部彻底消除缝隙 */}
-        <div className="border-t border-slate-200/50 dark:border-slate-800/50 overflow-hidden">
+        {/* Category Bar - Inside Header to be sticky */}
+        <div className="border-t border-slate-200/50 dark:border-slate-800/50 w-full overflow-hidden bg-slate-50/95 dark:bg-slate-950/95 backdrop-blur-md">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex items-center gap-2 overflow-x-auto no-scrollbar">
                 <button 
                     onClick={() => setSelectedCategoryId('all')}
