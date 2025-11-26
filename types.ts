@@ -12,7 +12,6 @@ export interface Note {
   content: string;
   createdAt: number;
   updatedAt: number;
-  tags: string[];
   color: CapsuleColor;
   categoryId?: string;
 }
