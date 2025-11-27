@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo, useDeferredValue, useRef } from 'react';
-import { Search, BrainCircuit, Moon, Sun, Settings, FolderPlus, Folder, LayoutGrid, List, PenLine, CheckSquare, Trash2, X, Mic } from 'lucide-react';
+import React, { useState, useEffect, useMemo, useDeferredValue } from 'react';
+import { Search, BrainCircuit, Moon, Sun, Settings, FolderPlus, Folder, LayoutGrid, List, PenLine, CheckSquare, Trash2, X } from 'lucide-react';
 import { Note, Category } from './types';
 import { CapsuleCard } from './components/CapsuleCard';
 import { EditorModal } from './components/EditorModal';
@@ -39,12 +39,7 @@ const App: React.FC = () => {
 
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [currentEditingNote, setCurrentEditingNote] = useState<Note | null>(null);
-  const [isAutoRecording, setIsAutoRecording] = useState(false); // 新增状态
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-
-  // 长按检测 Ref
-  const longPressTimerRef = useRef<number | null>(null);
-  const isLongPressHandledRef = useRef(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -88,56 +83,13 @@ const App: React.FC = () => {
     setTheme(prev => prev === 'light' ? 'dark' : 'light');
   };
 
-  const handleCreateNew = (startVoice: boolean = false) => {
+  const handleCreateNew = () => {
     setCurrentEditingNote(null);
-    setIsAutoRecording(startVoice);
     setIsEditorOpen(true);
   };
 
-  // --- 按钮交互逻辑 START ---
-  // 核心逻辑：触摸开始计时，超时则触发长按；点击事件检查是否已触发长按，未触发则执行普通点击
-  
-  const handleCreateBtnTouchStart = (e: React.TouchEvent) => {
-    isLongPressHandledRef.current = false; // 重置状态
-    
-    // 使用 window.setTimeout 避免 Node 类型冲突
-    longPressTimerRef.current = window.setTimeout(() => {
-        isLongPressHandledRef.current = true; // 标记已触发长按
-        
-        // 震动反馈
-        if (window.navigator && window.navigator.vibrate) {
-            window.navigator.vibrate(50);
-        }
-        
-        // 触发语音输入模式
-        handleCreateNew(true);
-    }, 600); // 600ms 长按阈值
-  };
-
-  const handleCreateBtnTouchEnd = (e: React.TouchEvent) => {
-    // 手指离开，清除定时器
-    if (longPressTimerRef.current) {
-        clearTimeout(longPressTimerRef.current);
-        longPressTimerRef.current = null;
-    }
-  };
-
-  // 统一的点击处理 (兼容鼠标和触摸后的 click 事件)
-  const handleCreateBtnClick = (e: React.MouseEvent) => {
-    // 如果长按逻辑已经处理过了，则忽略这次 Click
-    if (isLongPressHandledRef.current) {
-        isLongPressHandledRef.current = false; // 复位
-        return;
-    }
-    
-    // 否则执行普通新建
-    handleCreateNew(false);
-  };
-  // --- 按钮交互逻辑 END ---
-
   const handleEditNote = (note: Note) => {
     setCurrentEditingNote(note);
-    setIsAutoRecording(false);
     setIsEditorOpen(true);
   };
 
@@ -156,7 +108,7 @@ const App: React.FC = () => {
     try {
       await storage.saveNote(note);
     } catch (error: any) {
-      console.error("Failed to save note to DB:", String(error));
+      console.error("Failed to save note to DB:", error);
       alert("保存失败，请检查手机存储空间。");
     }
   };
@@ -170,7 +122,7 @@ const App: React.FC = () => {
     try {
         await storage.deleteNote(id);
     } catch (error: any) {
-        console.error("Failed to delete note from DB:", String(error));
+        console.error("Failed to delete note from DB:", error);
     }
   };
 
@@ -189,7 +141,7 @@ const App: React.FC = () => {
         await Promise.all(idsToDelete.map(id => storage.deleteNote(id)));
         setIsSelectionMode(false); // 退出选择模式
       } catch (error: any) {
-        console.error("Batch delete failed:", String(error));
+        console.error("Batch delete failed:", error);
         alert("部分删除失败");
       }
     }
@@ -279,7 +231,7 @@ const App: React.FC = () => {
             alert('数据恢复成功！');
         }
       } catch (err: any) {
-        console.error('Import error:', String(err));
+        console.error('Import error:', err);
         alert('无法读取文件，请确保是一个有效的 JSON 备份文件。');
       }
     };
@@ -501,13 +453,11 @@ const App: React.FC = () => {
                 </div>
             ) : (
                 <button 
-                    onClick={handleCreateBtnClick}
-                    onTouchStart={handleCreateBtnTouchStart}
-                    onTouchEnd={handleCreateBtnTouchEnd}
-                    className="w-full bg-slate-900 dark:bg-indigo-600 text-white h-12 rounded-full shadow-xl shadow-slate-300/50 dark:shadow-black/50 flex items-center justify-center gap-2 text-base font-medium hover:scale-[1.02] active:scale-[0.98] transition-all select-none"
+                    onClick={handleCreateNew}
+                    className="w-full bg-slate-900 dark:bg-indigo-600 text-white h-12 rounded-full shadow-xl shadow-slate-300/50 dark:shadow-black/50 flex items-center justify-center gap-2 text-base font-medium hover:scale-[1.02] active:scale-[0.98] transition-all"
                 >
                     <PenLine size={18} />
-                    记录灵感 (长按语音)
+                    记录灵感
                 </button>
             )}
         </div>
@@ -520,7 +470,6 @@ const App: React.FC = () => {
         onSave={handleSaveNote}
         onDelete={handleDeleteNote}
         categories={categories}
-        autoStartRecording={isAutoRecording} // 传递自动录音状态
       />
 
       <SettingsModal 
