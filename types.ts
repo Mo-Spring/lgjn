@@ -15,3 +15,11 @@ export interface Note {
   color: CapsuleColor;
   categoryId?: string;
 }
+
+// 扩展 Window 接口以支持语音识别 API
+declare global {
+  interface Window {
+    SpeechRecognition: any;
+    webkitSpeechRecognition: any;
+  }
+}
