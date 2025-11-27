@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Note, CapsuleColor, Category } from '../types';
-import { X, Trash2, Save, Folder } from 'lucide-react';
+import { X, Trash2, Save, Folder, Mic, MicOff } from 'lucide-react';
 
 interface EditorModalProps {
   note: Note | null;
@@ -9,18 +9,32 @@ interface EditorModalProps {
   onSave: (note: Note) => void;
   onDelete: (id: string) => void;
   categories: Category[];
+  autoStartRecording?: boolean; // 新增属性
 }
 
 const COLORS: CapsuleColor[] = ['blue', 'purple', 'green', 'rose', 'amber', 'slate'];
 
-export const EditorModal: React.FC<EditorModalProps> = ({ note, isOpen, onClose, onSave, onDelete, categories }) => {
+export const EditorModal: React.FC<EditorModalProps> = ({ 
+  note, 
+  isOpen, 
+  onClose, 
+  onSave, 
+  onDelete, 
+  categories,
+  autoStartRecording = false 
+}) => {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [selectedColor, setSelectedColor] = useState<CapsuleColor>('blue');
   const [categoryId, setCategoryId] = useState<string>('');
   
+  // 语音识别状态
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef<any>(null);
+  
   const modalRef = useRef<HTMLDivElement>(null);
 
+  // 初始化数据
   useEffect(() => {
     if (isOpen) {
       if (note) {
@@ -35,11 +49,90 @@ export const EditorModal: React.FC<EditorModalProps> = ({ note, isOpen, onClose,
         setCategoryId('');
       }
     }
+    // 关闭时重置录音状态
+    if (!isOpen) {
+      stopRecording();
+    }
   }, [isOpen, note]);
+
+  // 自动开始录音
+  useEffect(() => {
+    if (isOpen && autoStartRecording && !note) {
+      //稍微延迟一点启动，等待动画完成及权限准备
+      const timer = setTimeout(() => {
+        startRecording();
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, autoStartRecording, note]);
+
+  // 语音识别逻辑
+  const startRecording = () => {
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+      alert("您的浏览器不支持语音输入功能。");
+      return;
+    }
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+    
+    recognition.continuous = true; // 连续录音
+    recognition.interimResults = true; // 实时结果
+    recognition.lang = 'zh-CN'; // 设置语言为中文
+
+    recognition.onstart = () => {
+      setIsListening(true);
+      if (window.navigator && window.navigator.vibrate) {
+        window.navigator.vibrate(50);
+      }
+    };
+
+    recognition.onerror = (event: any) => {
+      console.error('Speech recognition error', event.error);
+      setIsListening(false);
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognition.onresult = (event: any) => {
+      let finalTranscript = '';
+      for (let i = event.resultIndex; i < event.results.length; ++i) {
+        if (event.results[i].isFinal) {
+          finalTranscript += event.results[i][0].transcript;
+        }
+      }
+      
+      if (finalTranscript) {
+        setContent(prev => prev + (prev ? ' ' : '') + finalTranscript);
+      }
+    };
+
+    recognitionRef.current = recognition;
+    recognition.start();
+  };
+
+  const stopRecording = () => {
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+      recognitionRef.current = null;
+    }
+    setIsListening(false);
+  };
+
+  const toggleRecording = () => {
+    if (isListening) {
+      stopRecording();
+    } else {
+      startRecording();
+    }
+  };
 
   if (!isOpen) return null;
 
   const handleSave = () => {
+    stopRecording(); // 保存时停止录音
     if (!content.trim() && !title.trim()) {
       onClose();
       return;
@@ -90,6 +183,19 @@ export const EditorModal: React.FC<EditorModalProps> = ({ note, isOpen, onClose,
             ))}
           </div>
           <div className="flex items-center gap-2">
+            {/* 语音输入按钮 */}
+            <button
+              onClick={toggleRecording}
+              className={`p-2 rounded-full transition-all ${
+                isListening 
+                  ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400 animate-pulse' 
+                  : 'text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
+              title={isListening ? "停止录音" : "开始录音"}
+            >
+              {isListening ? <MicOff size={20} /> : <Mic size={20} />}
+            </button>
+
             {note && (
               <button 
                 onClick={() => { onDelete(note.id); onClose(); }}
@@ -122,6 +228,9 @@ export const EditorModal: React.FC<EditorModalProps> = ({ note, isOpen, onClose,
                     ))}
                 </select>
              </div>
+             {isListening && (
+               <span className="text-xs text-red-500 animate-pulse font-medium ml-2">正在听...</span>
+             )}
           </div>
 
           <input
@@ -133,7 +242,7 @@ export const EditorModal: React.FC<EditorModalProps> = ({ note, isOpen, onClose,
           />
           
           <textarea
-            placeholder="捕捉你的灵感..."
+            placeholder={isListening ? "请说话..." : "捕捉你的灵感..."}
             value={content}
             onChange={(e) => setContent(e.target.value)}
             className="w-full h-full resize-none text-lg leading-relaxed bg-transparent border-none outline-none placeholder:text-slate-300 dark:placeholder:text-slate-600 text-slate-700 dark:text-slate-300 font-medium pb-20"
