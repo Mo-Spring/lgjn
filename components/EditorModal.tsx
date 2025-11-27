@@ -58,59 +58,64 @@ export const EditorModal: React.FC<EditorModalProps> = ({
   // 自动开始录音
   useEffect(() => {
     if (isOpen && autoStartRecording && !note) {
-      //稍微延迟一点启动，等待动画完成及权限准备
-      const timer = setTimeout(() => {
-        startRecording();
-      }, 300);
-      return () => clearTimeout(timer);
+      // 立即尝试启动，不使用 setTimeout，避免浏览器安全策略拦截
+      startRecording();
     }
   }, [isOpen, autoStartRecording, note]);
 
   // 语音识别逻辑
   const startRecording = () => {
     if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-      alert("您的浏览器不支持语音输入功能。");
+      alert("您的浏览器或设备不支持语音输入功能。");
       return;
     }
 
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    const recognition = new SpeechRecognition();
-    
-    recognition.continuous = true; // 连续录音
-    recognition.interimResults = true; // 实时结果
-    recognition.lang = 'zh-CN'; // 设置语言为中文
+    try {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const recognition = new SpeechRecognition();
+        
+        recognition.continuous = true; // 连续录音
+        recognition.interimResults = true; // 实时结果
+        recognition.lang = 'zh-CN'; // 设置语言为中文
 
-    recognition.onstart = () => {
-      setIsListening(true);
-      if (window.navigator && window.navigator.vibrate) {
-        window.navigator.vibrate(50);
-      }
-    };
+        recognition.onstart = () => {
+          setIsListening(true);
+          if (window.navigator && window.navigator.vibrate) {
+            window.navigator.vibrate(50);
+          }
+        };
 
-    recognition.onerror = (event: any) => {
-      console.error('Speech recognition error', event.error);
-      setIsListening(false);
-    };
+        recognition.onerror = (event: any) => {
+          console.error('Speech recognition error', event.error);
+          setIsListening(false);
+          // 如果是权限错误，提示用户
+          if (event.error === 'not-allowed') {
+              alert("语音输入需要麦克风权限，请在设置中允许。");
+          }
+        };
 
-    recognition.onend = () => {
-      setIsListening(false);
-    };
+        recognition.onend = () => {
+          setIsListening(false);
+        };
 
-    recognition.onresult = (event: any) => {
-      let finalTranscript = '';
-      for (let i = event.resultIndex; i < event.results.length; ++i) {
-        if (event.results[i].isFinal) {
-          finalTranscript += event.results[i][0].transcript;
-        }
-      }
-      
-      if (finalTranscript) {
-        setContent(prev => prev + (prev ? ' ' : '') + finalTranscript);
-      }
-    };
+        recognition.onresult = (event: any) => {
+          let finalTranscript = '';
+          for (let i = event.resultIndex; i < event.results.length; ++i) {
+            if (event.results[i].isFinal) {
+              finalTranscript += event.results[i][0].transcript;
+            }
+          }
+          
+          if (finalTranscript) {
+            setContent(prev => prev + (prev ? ' ' : '') + finalTranscript);
+          }
+        };
 
-    recognitionRef.current = recognition;
-    recognition.start();
+        recognitionRef.current = recognition;
+        recognition.start();
+    } catch (e) {
+        console.error("Failed to start speech recognition:", e);
+    }
   };
 
   const stopRecording = () => {
