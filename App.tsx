@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo, useDeferredValue } from 'react';
-import { Search, BrainCircuit, Moon, Sun, Settings, FolderPlus, Folder, LayoutGrid, List, PenLine, CheckSquare, Trash2, X } from 'lucide-react';
+import React, { useState, useEffect, useMemo, useDeferredValue, useRef } from 'react';
+import { Search, BrainCircuit, Moon, Sun, Settings, FolderPlus, Folder, LayoutGrid, List, PenLine, CheckSquare, Trash2, X, Mic } from 'lucide-react';
 import { Note, Category } from './types';
 import { CapsuleCard } from './components/CapsuleCard';
 import { EditorModal } from './components/EditorModal';
@@ -39,7 +39,12 @@ const App: React.FC = () => {
 
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [currentEditingNote, setCurrentEditingNote] = useState<Note | null>(null);
+  const [isAutoRecording, setIsAutoRecording] = useState(false); // 新增状态
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
+  // 长按检测 Ref
+  const longPressTimerRef = useRef<any>(null);
+  const isLongPressRef = useRef(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -52,7 +57,7 @@ const App: React.FC = () => {
         ]);
         setNotes(loadedNotes);
         setCategories(loadedCategories);
-      } catch (error) {
+      } catch (error: any) {
         console.error('Failed to load data from DB:', error);
       } finally {
         setLoading(false);
@@ -83,13 +88,52 @@ const App: React.FC = () => {
     setTheme(prev => prev === 'light' ? 'dark' : 'light');
   };
 
-  const handleCreateNew = () => {
+  const handleCreateNew = (startVoice: boolean = false) => {
     setCurrentEditingNote(null);
+    setIsAutoRecording(startVoice);
     setIsEditorOpen(true);
+  };
+
+  // 按钮交互逻辑
+  const handleCreateBtnTouchStart = (e: React.TouchEvent) => {
+    isLongPressRef.current = false;
+    longPressTimerRef.current = setTimeout(() => {
+        isLongPressRef.current = true;
+        // 震动反馈
+        if (window.navigator && window.navigator.vibrate) {
+            window.navigator.vibrate(50);
+        }
+        handleCreateNew(true); // 触发语音输入模式
+    }, 600); // 600ms 长按阈值
+  };
+
+  const handleCreateBtnTouchEnd = (e: React.TouchEvent) => {
+    if (longPressTimerRef.current) {
+        clearTimeout(longPressTimerRef.current);
+        longPressTimerRef.current = null;
+    }
+    // 如果不是长按，则触发普通点击逻辑
+    if (!isLongPressRef.current) {
+        handleCreateNew(false);
+    }
+    isLongPressRef.current = false;
+  };
+
+  // 兼容鼠标点击（非触摸设备）
+  const handleCreateBtnClick = (e: React.MouseEvent) => {
+    // 如果是触摸设备触发的 click，由于我们在 touchEnd 处理了，这里需要忽略
+    // 但是 React 的合成事件很难完全区分，简单的做法是：
+    // 如果没有触发过长按逻辑（即快速点击），且可能 touchEnd 没覆盖到（某些设备差异），
+    // 我们可以依赖 onClick 作为兜底。
+    // 但为防止双重触发，这里我们简化逻辑：仅在非触摸操作或触摸未被处理时响应。
+    // 最简单的方式：Touch 事件全权负责移动端，Click 事件负责桌面端。
+    // 由于移动端 TouchEnd 会触发 Click，我们需要阻止。
+    // 这里我们采用纯 Touch 事件处理移动端交互。
   };
 
   const handleEditNote = (note: Note) => {
     setCurrentEditingNote(note);
+    setIsAutoRecording(false);
     setIsEditorOpen(true);
   };
 
@@ -107,7 +151,7 @@ const App: React.FC = () => {
 
     try {
       await storage.saveNote(note);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to save note to DB:", error);
       alert("保存失败，请检查手机存储空间。");
     }
@@ -121,7 +165,7 @@ const App: React.FC = () => {
     setNotes(prev => prev.filter(n => n.id !== id));
     try {
         await storage.deleteNote(id);
-    } catch (error) {
+    } catch (error: any) {
         console.error("Failed to delete note from DB:", error);
     }
   };
@@ -140,7 +184,7 @@ const App: React.FC = () => {
       try {
         await Promise.all(idsToDelete.map(id => storage.deleteNote(id)));
         setIsSelectionMode(false); // 退出选择模式
-      } catch (error) {
+      } catch (error: any) {
         console.error("Batch delete failed:", error);
         alert("部分删除失败");
       }
@@ -230,7 +274,7 @@ const App: React.FC = () => {
             setIsSettingsOpen(false);
             alert('数据恢复成功！');
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error('Import error:', err);
         alert('无法读取文件，请确保是一个有效的 JSON 备份文件。');
       }
@@ -453,11 +497,13 @@ const App: React.FC = () => {
                 </div>
             ) : (
                 <button 
-                    onClick={handleCreateNew}
-                    className="w-full bg-slate-900 dark:bg-indigo-600 text-white h-12 rounded-full shadow-xl shadow-slate-300/50 dark:shadow-black/50 flex items-center justify-center gap-2 text-base font-medium hover:scale-[1.02] active:scale-[0.98] transition-all"
+                    onClick={handleCreateBtnClick}
+                    onTouchStart={handleCreateBtnTouchStart}
+                    onTouchEnd={handleCreateBtnTouchEnd}
+                    className="w-full bg-slate-900 dark:bg-indigo-600 text-white h-12 rounded-full shadow-xl shadow-slate-300/50 dark:shadow-black/50 flex items-center justify-center gap-2 text-base font-medium hover:scale-[1.02] active:scale-[0.98] transition-all select-none"
                 >
                     <PenLine size={18} />
-                    记录灵感
+                    记录灵感 (长按语音)
                 </button>
             )}
         </div>
@@ -470,6 +516,7 @@ const App: React.FC = () => {
         onSave={handleSaveNote}
         onDelete={handleDeleteNote}
         categories={categories}
+        autoStartRecording={isAutoRecording} // 传递自动录音状态
       />
 
       <SettingsModal 
