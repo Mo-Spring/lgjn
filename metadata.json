@@ -1,5 +1,7 @@
 {
   "name": "Copy1 of 灵感胶囊",
   "description": "主体",
-  "requestFramePermissions": []
+  "requestFramePermissions": [
+    "microphone"
+  ]
 }
