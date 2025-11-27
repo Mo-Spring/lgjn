@@ -43,8 +43,8 @@ const App: React.FC = () => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   // 长按检测 Ref
-  const longPressTimerRef = useRef<any>(null);
-  const isLongPressRef = useRef(false);
+  const longPressTimerRef = useRef<number | null>(null);
+  const isLongPressHandledRef = useRef(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -94,42 +94,46 @@ const App: React.FC = () => {
     setIsEditorOpen(true);
   };
 
-  // 按钮交互逻辑
+  // --- 按钮交互逻辑 START ---
+  // 核心逻辑：触摸开始计时，超时则触发长按；点击事件检查是否已触发长按，未触发则执行普通点击
+  
   const handleCreateBtnTouchStart = (e: React.TouchEvent) => {
-    isLongPressRef.current = false;
-    longPressTimerRef.current = setTimeout(() => {
-        isLongPressRef.current = true;
+    isLongPressHandledRef.current = false; // 重置状态
+    
+    // 使用 window.setTimeout 避免 Node 类型冲突
+    longPressTimerRef.current = window.setTimeout(() => {
+        isLongPressHandledRef.current = true; // 标记已触发长按
+        
         // 震动反馈
         if (window.navigator && window.navigator.vibrate) {
             window.navigator.vibrate(50);
         }
-        handleCreateNew(true); // 触发语音输入模式
+        
+        // 触发语音输入模式
+        handleCreateNew(true);
     }, 600); // 600ms 长按阈值
   };
 
   const handleCreateBtnTouchEnd = (e: React.TouchEvent) => {
+    // 手指离开，清除定时器
     if (longPressTimerRef.current) {
         clearTimeout(longPressTimerRef.current);
         longPressTimerRef.current = null;
     }
-    // 如果不是长按，则触发普通点击逻辑
-    if (!isLongPressRef.current) {
-        handleCreateNew(false);
-    }
-    isLongPressRef.current = false;
   };
 
-  // 兼容鼠标点击（非触摸设备）
+  // 统一的点击处理 (兼容鼠标和触摸后的 click 事件)
   const handleCreateBtnClick = (e: React.MouseEvent) => {
-    // 如果是触摸设备触发的 click，由于我们在 touchEnd 处理了，这里需要忽略
-    // 但是 React 的合成事件很难完全区分，简单的做法是：
-    // 如果没有触发过长按逻辑（即快速点击），且可能 touchEnd 没覆盖到（某些设备差异），
-    // 我们可以依赖 onClick 作为兜底。
-    // 但为防止双重触发，这里我们简化逻辑：仅在非触摸操作或触摸未被处理时响应。
-    // 最简单的方式：Touch 事件全权负责移动端，Click 事件负责桌面端。
-    // 由于移动端 TouchEnd 会触发 Click，我们需要阻止。
-    // 这里我们采用纯 Touch 事件处理移动端交互。
+    // 如果长按逻辑已经处理过了，则忽略这次 Click
+    if (isLongPressHandledRef.current) {
+        isLongPressHandledRef.current = false; // 复位
+        return;
+    }
+    
+    // 否则执行普通新建
+    handleCreateNew(false);
   };
+  // --- 按钮交互逻辑 END ---
 
   const handleEditNote = (note: Note) => {
     setCurrentEditingNote(note);
@@ -152,7 +156,7 @@ const App: React.FC = () => {
     try {
       await storage.saveNote(note);
     } catch (error: any) {
-      console.error("Failed to save note to DB:", error);
+      console.error("Failed to save note to DB:", String(error));
       alert("保存失败，请检查手机存储空间。");
     }
   };
@@ -166,7 +170,7 @@ const App: React.FC = () => {
     try {
         await storage.deleteNote(id);
     } catch (error: any) {
-        console.error("Failed to delete note from DB:", error);
+        console.error("Failed to delete note from DB:", String(error));
     }
   };
 
@@ -185,7 +189,7 @@ const App: React.FC = () => {
         await Promise.all(idsToDelete.map(id => storage.deleteNote(id)));
         setIsSelectionMode(false); // 退出选择模式
       } catch (error: any) {
-        console.error("Batch delete failed:", error);
+        console.error("Batch delete failed:", String(error));
         alert("部分删除失败");
       }
     }
@@ -275,7 +279,7 @@ const App: React.FC = () => {
             alert('数据恢复成功！');
         }
       } catch (err: any) {
-        console.error('Import error:', err);
+        console.error('Import error:', String(err));
         alert('无法读取文件，请确保是一个有效的 JSON 备份文件。');
       }
     };
