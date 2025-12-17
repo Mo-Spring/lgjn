@@ -28,7 +28,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, o
         className="absolute inset-0 bg-slate-900/30 dark:bg-black/50 backdrop-blur-sm transition-opacity" 
         onClick={onClose}
       />
-      <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-2xl shadow-2xl relative transform transition-all animate-in fade-in zoom-in-95 border border-slate-100 dark:border-slate-800 overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-3xl shadow-2xl relative transform transition-all animate-in fade-in zoom-in-95 border border-slate-100 dark:border-slate-800 overflow-hidden">
         <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50">
           <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
             <Database size={18} className="text-slate-500" />
@@ -83,7 +83,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, o
             </div>
           </div>
           <p className="text-xs text-center text-slate-400 dark:text-slate-500">
-             数据目前存储在您的浏览器本地缓存中。
+             数据目前存储在您的设备本地存储中。
           </p>
         </div>
       </div>
