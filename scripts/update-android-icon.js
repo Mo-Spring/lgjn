@@ -6,20 +6,24 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const ANDROID_RES_PATH = path.join(__dirname, '..', 'android', 'app', 'src', 'main', 'res');
+const ICON_BACKGROUND_COLOR = '#1e293b'; // Dark slate from SVG
 
-// Vector Drawable XML for the background (a linear gradient from the SVG)
+// 1. Define the color resource in values/colors.xml
+const COLORS_XML = `<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="ic_launcher_background_color">${ICON_BACKGROUND_COLOR}</color>
+</resources>
+`;
+
+// 2. Define the background drawable shape
 const BACKGROUND_XML = `<?xml version="1.0" encoding="utf-8"?>
 <shape xmlns:android="http://schemas.android.com/apk/res/android">
-    <gradient
-        android:type="linear"
-        android:angle="45"
-        android:startColor="#312e81"
-        android:endColor="#1e293b" />
+    <solid android:color="@color/ic_launcher_background_color"/>
 </shape>
 `;
 
-// Vector Drawable XML for the foreground (the capsule icon)
-// The icon is centered in the 108dp viewport, respecting the safe area.
+// 3. Define the foreground vector drawable (capsule)
+// Centered and scaled for the safe zone within the 108dp viewport.
 const FOREGROUND_XML = `<?xml version="1.0" encoding="utf-8"?>
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:aapt="http://schemas.android.com/aapt"
@@ -68,7 +72,7 @@ const FOREGROUND_XML = `<?xml version="1.0" encoding="utf-8"?>
 </vector>
 `;
 
-// Adaptive icon XML that combines background and foreground
+// 4. Define the adaptive icon XML that combines background and foreground
 const ADAPTIVE_ICON_XML = `<?xml version="1.0" encoding="utf-8"?>
 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
     <background android:drawable="@drawable/ic_launcher_background"/>
@@ -77,26 +81,31 @@ const ADAPTIVE_ICON_XML = `<?xml version="1.0" encoding="utf-8"?>
 `;
 
 const main = async () => {
-    console.log('✨ Generating Android adaptive icon...');
+    console.log('✨ Generating Android adaptive icon using robust method...');
 
     try {
         const drawablePath = path.join(ANDROID_RES_PATH, 'drawable');
+        const valuesPath = path.join(ANDROID_RES_PATH, 'values');
         const mipmapPath = path.join(ANDROID_RES_PATH, 'mipmap-anydpi-v26');
 
-        console.log(`Creating directories if they don't exist...`);
+        console.log(`Creating resource directories if they don't exist...`);
         fs.mkdirSync(drawablePath, { recursive: true });
+        fs.mkdirSync(valuesPath, { recursive: true });
         fs.mkdirSync(mipmapPath, { recursive: true });
 
-        console.log('Writing ic_launcher_background.xml...');
+        console.log('Writing values/colors.xml...');
+        fs.writeFileSync(path.join(valuesPath, 'colors.xml'), COLORS_XML);
+        
+        console.log('Writing drawable/ic_launcher_background.xml...');
         fs.writeFileSync(path.join(drawablePath, 'ic_launcher_background.xml'), BACKGROUND_XML);
         
-        console.log('Writing ic_launcher_foreground.xml...');
+        console.log('Writing drawable/ic_launcher_foreground.xml...');
         fs.writeFileSync(path.join(drawablePath, 'ic_launcher_foreground.xml'), FOREGROUND_XML);
         
-        console.log('Writing ic_launcher.xml...');
+        console.log('Writing mipmap-anydpi-v26/ic_launcher.xml...');
         fs.writeFileSync(path.join(mipmapPath, 'ic_launcher.xml'), ADAPTIVE_ICON_XML);
         
-        console.log('Writing ic_launcher_round.xml...');
+        console.log('Writing mipmap-anydpi-v26/ic_launcher_round.xml...');
         fs.writeFileSync(path.join(mipmapPath, 'ic_launcher_round.xml'), ADAPTIVE_ICON_XML);
 
         console.log('✅ Android adaptive icon generated successfully!');
