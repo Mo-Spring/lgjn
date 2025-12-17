@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Note, CapsuleColor, Category } from '../types';
-import { X, Trash2, Folder, Check } from 'lucide-react';
+// Fix: Add BrainCircuit for AI button icon
+import { X, Trash2, Folder, Check, BrainCircuit } from 'lucide-react';
+// Fix: Import Gemini service for AI enhancement
+import { generateNoteEnhancement } from '../services/geminiService';
 
 interface EditorModalProps {
   note: Note | null;
@@ -18,6 +21,8 @@ export const EditorModal: React.FC<EditorModalProps> = ({ note, isOpen, onClose,
   const [content, setContent] = useState('');
   const [selectedColor, setSelectedColor] = useState<CapsuleColor>('slate');
   const [categoryId, setCategoryId] = useState<string>('');
+  // Fix: Add state for AI enhancement loading status
+  const [isEnhancing, setIsEnhancing] = useState(false);
   
   const contentRef = useRef<HTMLTextAreaElement>(null);
 
@@ -56,6 +61,23 @@ export const EditorModal: React.FC<EditorModalProps> = ({ note, isOpen, onClose,
     };
     onSave(newNote);
     onClose();
+  };
+
+  // Fix: Add handler to call Gemini API for note enhancement
+  const handleEnhanceNote = async () => {
+    if (!content.trim() || isEnhancing) return;
+    setIsEnhancing(true);
+    try {
+        const enhancedContent = await generateNoteEnhancement(content);
+        if (enhancedContent) {
+          setContent(enhancedContent);
+        }
+    } catch (error) {
+        console.error("Failed to enhance note", error);
+        alert("AI 增强失败，请稍后再试。");
+    } finally {
+        setIsEnhancing(false);
+    }
   };
 
   const getColorClass = (c: CapsuleColor, isSelected: boolean) => {
@@ -121,16 +143,30 @@ export const EditorModal: React.FC<EditorModalProps> = ({ note, isOpen, onClose,
           />
         </div>
 
+        {/* Fix: Update footer to include AI enhancement button and adjust layout */}
         <footer 
-            className="px-4 py-3 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border-t border-slate-100 dark:border-slate-800 flex items-center justify-center gap-4"
+            className="px-4 py-3 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-4"
             style={{ paddingBottom: 'calc(0.75rem + var(--safe-area-inset-bottom))' }}
         >
-          {COLORS.map(c => (
-            <button key={c} onClick={() => setSelectedColor(c)} className={getColorClass(c, selectedColor === c)} />
-          ))}
+          <div className="flex items-center gap-4">
+            {COLORS.map(c => (
+              <button key={c} onClick={() => setSelectedColor(c)} className={getColorClass(c, selectedColor === c)} />
+            ))}
+          </div>
+          <button 
+            onClick={handleEnhanceNote} 
+            disabled={isEnhancing || !content.trim()}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isEnhancing ? (
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-slate-500"></div>
+            ) : (
+              <BrainCircuit size={16} />
+            )}
+            <span className="whitespace-nowrap">{isEnhancing ? '增强中...' : 'AI 增强'}</span>
+          </button>
         </footer>
       </div>
     </div>
   );
 };
-
