@@ -5,6 +5,7 @@ import { CapsuleCard } from './components/CapsuleCard';
 import { EditorModal } from './components/EditorModal';
 import { SettingsModal } from './components/SettingsModal';
 import { storage } from './services/storageService';
+import iconUrl from './assets/icon.svg';
 
 const THEME_STORAGE_KEY = 'inspiration_capsules_theme';
 const VIEW_MODE_STORAGE_KEY = 'inspiration_capsules_view_mode';
@@ -219,7 +220,7 @@ const App: React.FC = () => {
       >
         <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
-            <img src="/assets/icon.svg" alt="App Icon" className="w-9 h-9 rounded-lg" />
+            <img src={iconUrl} alt="App Icon" className="w-9 h-9 rounded-lg" />
             <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">灵感胶囊</h1>
           </div>
           
