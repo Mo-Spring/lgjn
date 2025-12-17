@@ -151,8 +151,51 @@ const App: React.FC = () => {
       }
   };
 
-  const handleExportData = () => { /* ... existing code ... */ };
-  const handleImportData = (file: File) => { /* ... existing code ... */ };
+  const handleExportData = async () => {
+      const notes = await storage.getAllNotes();
+      const categories = await storage.getAllCategories();
+      const dataStr = JSON.stringify({ notes, categories }, null, 2);
+      const dataBlob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(dataBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      const date = new Date().toISOString().split('T')[0];
+      link.download = `inspiration_capsule_backup_${date}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+  };
+  
+  const handleImportData = (file: File) => {
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+          try {
+              const text = e.target?.result;
+              if (typeof text !== 'string') throw new Error("File content is not readable");
+              const { notes, categories } = JSON.parse(text);
+              if (Array.isArray(notes) && Array.isArray(categories)) {
+                  if (confirm("确定要导入数据吗？这将与现有数据合并。")) {
+                      await storage.importData(notes, categories);
+                      // Reload data
+                      const [loadedNotes, loadedCategories] = await Promise.all([
+                          storage.getAllNotes(),
+                          storage.getAllCategories()
+                      ]);
+                      setNotes(loadedNotes);
+                      setCategories(loadedCategories);
+                      alert("导入成功！");
+                  }
+              } else {
+                  throw new Error("Invalid backup file format");
+              }
+          } catch (error) {
+              console.error("Import failed:", error);
+              alert("导入失败，请检查文件格式是否正确。");
+          }
+      };
+      reader.readAsText(file);
+  };
 
   const filteredNotes = useMemo(() => {
     let result = notes;
@@ -175,10 +218,8 @@ const App: React.FC = () => {
         style={{ paddingTop: 'var(--safe-area-inset-top)' }}
       >
         <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-2">
-            <div className="bg-slate-900 dark:bg-indigo-500 text-white p-2 rounded-xl">
-               <BrainCircuit size={20} />
-            </div>
+          <div className="flex items-center gap-3">
+            <img src="/assets/icon.svg" alt="App Icon" className="w-9 h-9 rounded-lg" />
             <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">灵感胶囊</h1>
           </div>
           
