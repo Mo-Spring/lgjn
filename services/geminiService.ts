@@ -1,7 +1,7 @@
 import { GoogleGenAI } from "@google/genai";
 
 // AI 功能
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_API_KEY });
 
 export const generateNoteEnhancement = async (content: string): Promise<string> => {
   if (!content.trim()) {

@@ -188,4 +188,3 @@ export const CapsuleCard: React.FC<CapsuleCardProps> = ({
     </div>
   );
 };
-

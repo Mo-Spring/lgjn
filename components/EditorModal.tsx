@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Note, CapsuleColor, Category } from '../types';
-// Fix: Add BrainCircuit for AI button icon
 import { X, Trash2, Folder, Check, BrainCircuit } from 'lucide-react';
-// Fix: Import Gemini service for AI enhancement
 import { generateNoteEnhancement } from '../services/geminiService';
 
 interface EditorModalProps {
@@ -21,7 +19,6 @@ export const EditorModal: React.FC<EditorModalProps> = ({ note, isOpen, onClose,
   const [content, setContent] = useState('');
   const [selectedColor, setSelectedColor] = useState<CapsuleColor>('slate');
   const [categoryId, setCategoryId] = useState<string>('');
-  // Fix: Add state for AI enhancement loading status
   const [isEnhancing, setIsEnhancing] = useState(false);
   
   const contentRef = useRef<HTMLTextAreaElement>(null);
@@ -63,7 +60,6 @@ export const EditorModal: React.FC<EditorModalProps> = ({ note, isOpen, onClose,
     onClose();
   };
 
-  // Fix: Add handler to call Gemini API for note enhancement
   const handleEnhanceNote = async () => {
     if (!content.trim() || isEnhancing) return;
     setIsEnhancing(true);
@@ -143,7 +139,6 @@ export const EditorModal: React.FC<EditorModalProps> = ({ note, isOpen, onClose,
           />
         </div>
 
-        {/* Fix: Update footer to include AI enhancement button and adjust layout */}
         <footer 
             className="px-4 py-3 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-4"
             style={{ paddingBottom: 'calc(0.75rem + var(--safe-area-inset-bottom))' }}
