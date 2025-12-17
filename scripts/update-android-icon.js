@@ -95,6 +95,9 @@ const main = async () => {
         
         console.log('Writing ic_launcher.xml...');
         fs.writeFileSync(path.join(mipmapPath, 'ic_launcher.xml'), ADAPTIVE_ICON_XML);
+        
+        console.log('Writing ic_launcher_round.xml...');
+        fs.writeFileSync(path.join(mipmapPath, 'ic_launcher_round.xml'), ADAPTIVE_ICON_XML);
 
         console.log('✅ Android adaptive icon generated successfully!');
     } catch (error) {
