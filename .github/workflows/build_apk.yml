@@ -38,15 +38,24 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Add Android Platform & Sync
+      - name: Add Android Platform
+        run: npx cap add android || true
+
+      - name: Generate Android Adaptive Icon
+        run: npm run android:icon
+
+      - name: Sync Capacitor Project
+        run: npx cap sync
+
+      - name: Clean Gradle Build Cache
         run: |
-          npx cap add android || true
-          npx cap sync
+          cd android
+          chmod +x gradlew
+          ./gradlew clean
 
       - name: Build APK with Gradle
         run: |
           cd android
-          chmod +x gradlew
           ./gradlew assembleDebug
 
       - name: Upload APK
