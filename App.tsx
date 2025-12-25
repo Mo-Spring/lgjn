@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect, useMemo, useDeferredValue } from 'react';
-import { Search, Plus, X, Archive, Menu, Grid, List, CheckCircle2, Trash2, Edit2, MoreHorizontal } from 'lucide-react';
+import { Search, Plus, X, Archive, Menu, Grid, List, CheckCircle2, Moon, Sun } from 'lucide-react';
 import { Note, Category } from './types';
 import { CapsuleCard } from './components/CapsuleCard';
 import { EditorModal } from './components/EditorModal';
@@ -22,8 +23,9 @@ const App: React.FC = () => {
   
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     if (typeof window !== 'undefined') {
+        const stored = localStorage.getItem(THEME_STORAGE_KEY);
+        if (stored) return stored as 'light' | 'dark';
         if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) return 'dark';
-        return 'light';
     }
     return 'light';
   });
@@ -42,7 +44,6 @@ const App: React.FC = () => {
   const [currentEditingNote, setCurrentEditingNote] = useState<Note | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   
-  // Context Menu State (Action Sheet)
   const [contextMenuNote, setContextMenuNote] = useState<Note | null>(null);
 
   useEffect(() => {
@@ -237,39 +238,49 @@ const App: React.FC = () => {
     <div className="min-h-screen bg-[#F2F2F7] dark:bg-black text-slate-900 dark:text-slate-100 font-sans">
       
       {/* Header - Glassmorphism */}
-      <header className="sticky top-0 z-40 bg-[#F2F2F7]/90 dark:bg-black/80 backdrop-blur-md border-b border-black/5 dark:border-white/10 pt-safe">
+      <header className="sticky top-0 z-40 bg-[#F2F2F7]/90 dark:bg-black/80 backdrop-blur-md border-b border-black/5 dark:border-white/10 pt-safe transition-all duration-300">
         <div className="max-w-3xl mx-auto px-4">
             <div className="h-14 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                    <button onClick={() => setIsSettingsOpen(true)} className="p-2 -ml-2 rounded-full text-slate-900 dark:text-white active:bg-slate-200 dark:active:bg-white/10 transition-colors">
-                        <Menu size={24} strokeWidth={2.5} />
+                <div className="flex items-center gap-3">
+                    <button 
+                        onClick={() => setIsSettingsOpen(true)} 
+                        className="p-2 -ml-2 rounded-full text-slate-600 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                    >
+                        <Menu size={22} strokeWidth={2.5} />
                     </button>
-                    <h1 className="text-xl font-bold tracking-tight">灵感胶囊</h1>
+                    <h1 className="text-lg font-bold tracking-tight text-slate-900 dark:text-white">灵感胶囊</h1>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1">
                     <button 
                         onClick={() => {
                             if (!isSearchOpen) setTimeout(() => document.getElementById('search-input')?.focus(), 100);
                             setIsSearchOpen(!isSearchOpen);
                         }}
-                        className={`p-2 rounded-full text-slate-900 dark:text-white transition-colors ${isSearchOpen ? 'bg-slate-200 dark:bg-white/10' : ''}`}
+                        className={`p-2 rounded-full text-slate-600 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/10 transition-colors ${isSearchOpen ? 'bg-black/5 dark:bg-white/10' : ''}`}
                     >
-                        <Search size={22} />
+                        <Search size={20} />
                     </button>
 
                     <button 
                         onClick={() => setViewMode(prev => prev === 'grid' ? 'list' : 'grid')}
-                        className="p-2 rounded-full text-slate-900 dark:text-white"
+                        className="p-2 rounded-full text-slate-600 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
                     >
-                        {viewMode === 'grid' ? <Grid size={22} /> : <List size={22} />}
+                        {viewMode === 'grid' ? <Grid size={20} /> : <List size={20} />}
                     </button>
                     
                     <button 
-                        onClick={toggleSelectionMode}
-                        className={`p-2 rounded-full transition-colors ${isSelectionMode ? 'bg-blue-500 text-white' : 'text-slate-900 dark:text-white'}`}
+                        onClick={toggleTheme}
+                        className="p-2 rounded-full text-slate-600 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
                     >
-                        <CheckCircle2 size={22} />
+                        {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
+                    </button>
+
+                    <button 
+                        onClick={toggleSelectionMode}
+                        className={`p-2 rounded-full transition-colors ml-1 ${isSelectionMode ? 'bg-slate-900 text-white dark:bg-white dark:text-black' : 'text-slate-600 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/10'}`}
+                    >
+                        <CheckCircle2 size={20} />
                     </button>
                 </div>
             </div>
@@ -281,7 +292,7 @@ const App: React.FC = () => {
                         id="search-input"
                         type="text"
                         placeholder="搜索灵感..."
-                        className="w-full bg-[#E5E5EA] dark:bg-[#1C1C1E] rounded-xl px-4 py-2 text-base outline-none text-slate-900 dark:text-white placeholder:text-slate-500"
+                        className="w-full bg-white dark:bg-[#1C1C1E] rounded-xl px-4 py-2.5 text-base outline-none text-slate-900 dark:text-white placeholder:text-slate-400 shadow-sm"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
@@ -289,10 +300,10 @@ const App: React.FC = () => {
             )}
 
             {/* Categories Scroll */}
-            <div className="pb-3 flex items-center gap-2 overflow-x-auto no-scrollbar">
+            <div className="pb-3 flex items-center gap-2 overflow-x-auto no-scrollbar mask-linear-fade">
                 <button 
                     onClick={() => setSelectedCategoryId('all')}
-                    className={`whitespace-nowrap px-4 py-1.5 rounded-full text-[14px] font-medium transition-all ${selectedCategoryId === 'all' ? 'bg-slate-900 dark:bg-white text-white dark:text-black' : 'text-slate-500 dark:text-slate-400'}`}
+                    className={`whitespace-nowrap px-4 py-1.5 rounded-full text-[13px] font-semibold transition-all shadow-sm ${selectedCategoryId === 'all' ? 'bg-slate-900 dark:bg-white text-white dark:text-black shadow-lg shadow-slate-900/20' : 'bg-white dark:bg-[#1C1C1E] text-slate-500 dark:text-slate-400'}`}
                 >
                     全部
                 </button>
@@ -300,16 +311,16 @@ const App: React.FC = () => {
                     <button 
                         key={cat.id}
                         onClick={() => setSelectedCategoryId(cat.id)}
-                        className={`whitespace-nowrap px-4 py-1.5 rounded-full text-[14px] font-medium transition-all ${selectedCategoryId === cat.id ? 'bg-slate-900 dark:bg-white text-white dark:text-black' : 'text-slate-500 dark:text-slate-400'}`}
+                        className={`whitespace-nowrap px-4 py-1.5 rounded-full text-[13px] font-semibold transition-all shadow-sm ${selectedCategoryId === cat.id ? 'bg-slate-900 dark:bg-white text-white dark:text-black shadow-lg shadow-slate-900/20' : 'bg-white dark:bg-[#1C1C1E] text-slate-500 dark:text-slate-400'}`}
                     >
                         {cat.name}
                     </button>
                 ))}
                 <button 
                     onClick={handleAddCategory} 
-                    className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-200 dark:bg-white/10 text-slate-500 dark:text-slate-300 flex-shrink-0"
+                    className="w-8 h-8 flex items-center justify-center rounded-full bg-white dark:bg-[#1C1C1E] text-slate-400 dark:text-slate-500 flex-shrink-0 shadow-sm"
                 >
-                    <Plus size={16} />
+                    <Plus size={14} />
                 </button>
             </div>
         </div>
@@ -319,14 +330,16 @@ const App: React.FC = () => {
       <main className="max-w-3xl mx-auto px-4 py-4 pb-32 animate-fade-in min-h-[80vh]">
         {loading ? (
              <div className="flex justify-center items-center h-40">
-                <div className="w-6 h-6 border-2 border-slate-300 border-t-blue-500 rounded-full animate-spin"></div>
+                <div className="w-5 h-5 border-2 border-slate-300 border-t-slate-800 rounded-full animate-spin"></div>
              </div>
         ) : (
              <>
                 {notes.length === 0 && !searchQuery ? (
-                  <div className="flex flex-col items-center justify-center pt-32 opacity-40">
-                    <Archive size={48} className="text-slate-400 mb-4" strokeWidth={1} />
-                    <p className="text-slate-500 text-sm">暂无灵感，开始记录吧</p>
+                  <div className="flex flex-col items-center justify-center pt-32 opacity-40 animate-fade-in">
+                    <div className="w-20 h-20 bg-slate-200 dark:bg-white/5 rounded-full flex items-center justify-center mb-6">
+                        <Archive size={32} className="text-slate-400" strokeWidth={1.5} />
+                    </div>
+                    <p className="text-slate-500 text-sm font-medium">暂无灵感，开始记录吧</p>
                   </div>
                 ) : (
                   <div className={
@@ -334,17 +347,18 @@ const App: React.FC = () => {
                             ? "grid grid-cols-2 gap-3 auto-rows-max" 
                             : "flex flex-col gap-2"
                     }>
-                      {filteredNotes.map(note => (
-                        <CapsuleCard 
-                          key={note.id} 
-                          note={note} 
-                          onClick={handleEditNote}
-                          onLongPress={handleLongPressNote}
-                          viewMode={viewMode}
-                          isSelectionMode={isSelectionMode}
-                          isSelected={selectedNoteIds.has(note.id)}
-                          onToggleSelect={handleToggleSelectNote}
-                        />
+                      {filteredNotes.map((note, index) => (
+                        <div key={note.id} className="animate-enter" style={{ animationDelay: `${index * 0.05}s` }}>
+                            <CapsuleCard 
+                              note={note} 
+                              onClick={handleEditNote}
+                              onLongPress={handleLongPressNote}
+                              viewMode={viewMode}
+                              isSelectionMode={isSelectionMode}
+                              isSelected={selectedNoteIds.has(note.id)}
+                              onToggleSelect={handleToggleSelectNote}
+                            />
+                        </div>
                       ))}
                     </div>
                 )}
@@ -352,21 +366,22 @@ const App: React.FC = () => {
         )}
       </main>
 
-      {/* Floating Action Button */}
-      <div className="fixed bottom-8 right-6 z-40 flex flex-col items-end gap-4 pb-safe">
+      {/* Floating Action Button - Glass Effect */}
+      <div className="fixed bottom-8 right-6 z-40 flex flex-col items-end gap-4 pb-safe pointer-events-none">
+         <div className="pointer-events-auto">
          {isSelectionMode ? (
-             <div className="flex items-center gap-4 bg-white dark:bg-[#1C1C1E] p-2 pr-6 rounded-full shadow-2xl animate-slide-up border border-slate-100 dark:border-white/10">
+             <div className="flex items-center gap-4 bg-white/90 dark:bg-[#1C1C1E]/90 backdrop-blur-xl p-2 pr-6 rounded-full shadow-[0_8px_30px_rgba(0,0,0,0.12)] animate-slide-up border border-white/20 dark:border-white/5">
                 <button 
                     onClick={() => setIsSelectionMode(false)}
-                    className="w-10 h-10 rounded-full bg-[#F2F2F7] dark:bg-[#2C2C2E] flex items-center justify-center text-slate-600 dark:text-slate-300"
+                    className="w-10 h-10 rounded-full bg-slate-100 dark:bg-white/10 flex items-center justify-center text-slate-600 dark:text-slate-300"
                 >
                     <X size={20} />
                 </button>
-                <span className="text-sm font-medium text-slate-900 dark:text-white">已选 {selectedNoteIds.size} 项</span>
+                <span className="text-sm font-bold text-slate-900 dark:text-white">已选 {selectedNoteIds.size}</span>
                 <button 
                     onClick={handleBatchDelete}
                     disabled={selectedNoteIds.size === 0}
-                    className={`text-sm font-bold ${selectedNoteIds.size > 0 ? 'text-red-500' : 'text-slate-400'}`}
+                    className={`text-sm font-bold transition-colors ${selectedNoteIds.size > 0 ? 'text-red-500' : 'text-slate-300 dark:text-slate-600'}`}
                 >
                     删除
                 </button>
@@ -374,25 +389,26 @@ const App: React.FC = () => {
          ) : (
             <button 
                 onClick={handleCreateNew}
-                className="flex items-center justify-center w-14 h-14 bg-blue-600 text-white rounded-full shadow-lg shadow-blue-500/30 active:scale-90 transition-all hover:bg-blue-700"
+                className="group flex items-center justify-center w-14 h-14 bg-slate-900 dark:bg-white text-white dark:text-black rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.25)] dark:shadow-[0_8px_30px_rgba(255,255,255,0.15)] active:scale-90 transition-all duration-300 hover:rotate-90"
             >
-                <Plus size={28} />
+                <Plus size={26} strokeWidth={2.5} />
             </button>
          )}
+         </div>
       </div>
 
-      {/* Action Sheet (Context Menu) */}
+      {/* Action Sheet (Context Menu) - Glass Effect */}
       {contextMenuNote && (
         <>
             <div 
-                className="fixed inset-0 z-50 bg-black/20 dark:bg-black/60 backdrop-blur-[1px]" 
+                className="fixed inset-0 z-50 bg-black/20 dark:bg-black/60 backdrop-blur-[2px] transition-opacity" 
                 onClick={() => setContextMenuNote(null)}
             />
             <div className="fixed inset-x-4 bottom-8 z-50 animate-slide-up pb-safe">
-                <div className="bg-white/90 dark:bg-[#1C1C1E]/90 backdrop-blur-xl rounded-[14px] overflow-hidden shadow-2xl">
-                    <div className="p-4 border-b border-slate-200/50 dark:border-white/10 text-center">
-                        <span className="text-xs font-medium text-slate-400 truncate block px-8">
-                            {contextMenuNote.title || "未命名灵感"}
+                <div className="bg-white/85 dark:bg-[#1C1C1E]/85 backdrop-blur-2xl rounded-[20px] overflow-hidden shadow-2xl border border-white/20 dark:border-white/5">
+                    <div className="p-4 border-b border-black/5 dark:border-white/5 text-center">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest truncate block px-8">
+                            {contextMenuNote.title || "UNTITLED"}
                         </span>
                     </div>
                     <button 
@@ -400,9 +416,9 @@ const App: React.FC = () => {
                             setContextMenuNote(null);
                             handleEditNote(contextMenuNote);
                         }}
-                        className="w-full py-3.5 text-[16px] font-medium text-blue-600 dark:text-blue-400 active:bg-slate-100 dark:active:bg-white/10 border-b border-slate-200/50 dark:border-white/10"
+                        className="w-full py-4 text-[16px] font-medium text-slate-900 dark:text-white active:bg-black/5 dark:active:bg-white/10 border-b border-black/5 dark:border-white/5"
                     >
-                        编辑
+                        编辑内容
                     </button>
                     <button 
                         onClick={() => {
@@ -410,23 +426,23 @@ const App: React.FC = () => {
                             setIsSelectionMode(true);
                             handleToggleSelectNote(contextMenuNote.id);
                         }}
-                        className="w-full py-3.5 text-[16px] font-medium text-slate-900 dark:text-white active:bg-slate-100 dark:active:bg-white/10 border-b border-slate-200/50 dark:border-white/10"
+                        className="w-full py-4 text-[16px] font-medium text-slate-900 dark:text-white active:bg-black/5 dark:active:bg-white/10 border-b border-black/5 dark:border-white/5"
                     >
-                        选择
+                        多选模式
                     </button>
                     <button 
                         onClick={() => {
                             setContextMenuNote(null);
                             if(confirm('确认删除？')) handleDeleteNote(contextMenuNote.id);
                         }}
-                        className="w-full py-3.5 text-[16px] font-medium text-red-500 active:bg-slate-100 dark:active:bg-white/10"
+                        className="w-full py-4 text-[16px] font-medium text-red-500 active:bg-black/5 dark:active:bg-white/10"
                     >
                         删除
                     </button>
                 </div>
                 <button 
                     onClick={() => setContextMenuNote(null)}
-                    className="mt-3 w-full py-3.5 bg-white dark:bg-[#2C2C2E] rounded-[14px] text-[16px] font-semibold text-blue-600 dark:text-blue-400 shadow-lg active:scale-[0.98] transition-transform"
+                    className="mt-3 w-full py-4 bg-white/90 dark:bg-[#2C2C2E]/90 backdrop-blur-xl rounded-[20px] text-[16px] font-bold text-slate-900 dark:text-white shadow-xl active:scale-[0.98] transition-transform"
                 >
                     取消
                 </button>
