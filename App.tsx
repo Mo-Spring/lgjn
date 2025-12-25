@@ -5,6 +5,7 @@ import { Note, Category } from './types';
 import { CapsuleCard } from './components/CapsuleCard';
 import { EditorModal } from './components/EditorModal';
 import { SettingsModal } from './components/SettingsModal';
+import { ConfirmDialog, InputDialog } from './components/Dialogs';
 import { storage } from './services/storageService';
 import { StatusBar, Style } from '@capacitor/status-bar';
 import { Capacitor } from '@capacitor/core';
@@ -48,6 +49,10 @@ const App: React.FC = () => {
   
   const [contextMenuNote, setContextMenuNote] = useState<Note | null>(null);
 
+  // Dialog States
+  const [inputDialog, setInputDialog] = useState({ isOpen: false, title: '', placeholder: '', onConfirm: (_val: string) => {} });
+  const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, title: '', message: '', isDangerous: false, onConfirm: () => {} });
+
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -74,19 +79,12 @@ const App: React.FC = () => {
     root.classList.add(theme);
     localStorage.setItem(THEME_STORAGE_KEY, theme);
 
-    // 设置状态栏 (非沉浸式，实体背景)
     if (Capacitor.isNativePlatform()) {
         const setStatusBarStyle = async () => {
             try {
-                // 关闭 Overlay 模式（内容在状态栏下方，不覆盖）
                 await StatusBar.setOverlaysWebView({ overlay: false });
-                
-                // 设置状态栏背景色 (与 Header 一致)
-                // Light: #F2F2F7, Dark: #000000
                 const color = theme === 'dark' ? '#000000' : '#F2F2F7';
                 await StatusBar.setBackgroundColor({ color: color });
-                
-                // 根据主题设置文字颜色
                 await StatusBar.setStyle({ style: theme === 'dark' ? Style.Dark : Style.Light });
             } catch (e) {
                 console.warn("Status bar not supported", e);
@@ -149,7 +147,8 @@ const App: React.FC = () => {
     }
   };
 
-  const handleDeleteNote = async (id: string) => {
+  // Perform actual deletion
+  const executeDeleteNote = async (id: string) => {
     setNotes(prev => prev.filter(n => n.id !== id));
     try {
         await storage.deleteNote(id);
@@ -158,19 +157,39 @@ const App: React.FC = () => {
     }
   };
 
+  // Trigger delete confirmation dialog
+  const requestDeleteNote = (id: string) => {
+      setConfirmDialog({
+          isOpen: true,
+          title: '删除胶囊',
+          message: '确定要删除这条灵感吗？此操作无法撤销。',
+          isDangerous: true,
+          onConfirm: () => {
+              executeDeleteNote(id);
+              if (isEditorOpen) setIsEditorOpen(false);
+          }
+      });
+  };
+
   const handleBatchDelete = async () => {
     if (selectedNoteIds.size === 0) return;
 
-    if (confirm(`确定删除 ${selectedNoteIds.size} 个胶囊吗？`)) {
-      const idsToDelete: string[] = Array.from(selectedNoteIds);
-      setNotes(prev => prev.filter(n => !selectedNoteIds.has(n.id)));
-      try {
-        await Promise.all(idsToDelete.map((id) => storage.deleteNote(id)));
-        setIsSelectionMode(false);
-      } catch (error: any) {
-        console.error("Batch delete failed:", error);
-      }
-    }
+    setConfirmDialog({
+        isOpen: true,
+        title: '批量删除',
+        message: `确定要删除选中的 ${selectedNoteIds.size} 个胶囊吗？`,
+        isDangerous: true,
+        onConfirm: async () => {
+            const idsToDelete: string[] = Array.from(selectedNoteIds);
+            setNotes(prev => prev.filter(n => !selectedNoteIds.has(n.id)));
+            try {
+                await Promise.all(idsToDelete.map((id) => storage.deleteNote(id)));
+                setIsSelectionMode(false);
+            } catch (error: any) {
+                console.error("Batch delete failed:", error);
+            }
+        }
+    });
   };
 
   const toggleSelectionMode = () => {
@@ -189,18 +208,24 @@ const App: React.FC = () => {
     });
   };
 
-  const handleAddCategory = async () => {
-    const name = prompt("请输入分类名称：");
-    if (name && name.trim()) {
-        const newCat: Category = {
-            id: crypto.randomUUID(),
-            name: name.trim(),
-            createdAt: Date.now()
-        };
-        setCategories(prev => [...prev, newCat]);
-        await storage.saveCategory(newCat);
-        setSelectedCategoryId(newCat.id);
-    }
+  const handleAddCategory = () => {
+    setInputDialog({
+        isOpen: true,
+        title: '新建分类',
+        placeholder: '输入分类名称...',
+        onConfirm: async (name) => {
+            if (name && name.trim()) {
+                const newCat: Category = {
+                    id: crypto.randomUUID(),
+                    name: name.trim(),
+                    createdAt: Date.now()
+                };
+                setCategories(prev => [...prev, newCat]);
+                await storage.saveCategory(newCat);
+                setSelectedCategoryId(newCat.id);
+            }
+        }
+    });
   };
 
   const handleExportData = () => {
@@ -226,10 +251,17 @@ const App: React.FC = () => {
         if (Array.isArray(importedData) || importedData.notes) {
             const importedNotes = Array.isArray(importedData) ? importedData : importedData.notes;
             const importedCats = importedData.categories || [];
-             if (confirm(`确认导入 ${importedNotes.length} 条笔记？`)) {
-                await storage.importData(importedNotes, importedCats);
-                window.location.reload(); 
-            }
+            
+            setConfirmDialog({
+                isOpen: true,
+                title: '导入数据',
+                message: `发现 ${importedNotes.length} 条笔记。确认覆盖当前数据并导入吗？`,
+                isDangerous: false,
+                onConfirm: async () => {
+                    await storage.importData(importedNotes, importedCats);
+                    window.location.reload(); 
+                }
+            });
         }
       } catch (err) {
         alert('文件格式错误');
@@ -260,8 +292,8 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#F2F2F7] dark:bg-black text-slate-900 dark:text-slate-100 font-sans">
       
-      {/* Header - Sticky but distinct */}
-      <header className="sticky top-0 z-40 bg-[#F2F2F7] dark:bg-black border-b border-black/5 dark:border-white/10 transition-colors duration-300">
+      {/* Header */}
+      <header className="sticky top-0 z-40 bg-[#F2F2F7]/95 dark:bg-black/95 backdrop-blur-md border-b border-black/5 dark:border-white/5 transition-colors duration-300">
         <div className="max-w-3xl mx-auto px-4">
             <div className="h-14 flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -308,21 +340,21 @@ const App: React.FC = () => {
                 </div>
             </div>
             
-            {/* Expanded Search Bar */}
+            {/* Search */}
             {isSearchOpen && (
                 <div className="pb-3 animate-enter">
                     <input 
                         id="search-input"
                         type="text"
                         placeholder="搜索灵感..."
-                        className="w-full bg-white dark:bg-[#1C1C1E] rounded-xl px-4 py-2.5 text-base outline-none text-slate-900 dark:text-white placeholder:text-slate-400 shadow-sm"
+                        className="w-full bg-white dark:bg-[#1C1C1E] rounded-xl px-4 py-2.5 text-base outline-none text-slate-900 dark:text-white placeholder:text-slate-400 shadow-sm transition-all"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
                 </div>
             )}
 
-            {/* Categories Scroll */}
+            {/* Categories */}
             <div className="pb-3 flex items-center gap-2 overflow-x-auto no-scrollbar mask-linear-fade">
                 <button 
                     onClick={() => setSelectedCategoryId('all')}
@@ -341,7 +373,7 @@ const App: React.FC = () => {
                 ))}
                 <button 
                     onClick={handleAddCategory} 
-                    className="w-8 h-8 flex items-center justify-center rounded-full bg-white dark:bg-[#1C1C1E] text-slate-400 dark:text-slate-500 flex-shrink-0 shadow-sm"
+                    className="w-8 h-8 flex items-center justify-center rounded-full bg-white dark:bg-[#1C1C1E] text-slate-400 dark:text-slate-500 flex-shrink-0 shadow-sm active:scale-90 transition-transform"
                 >
                     <Plus size={14} />
                 </button>
@@ -389,7 +421,7 @@ const App: React.FC = () => {
         )}
       </main>
 
-      {/* Floating Action Button - Glass Effect */}
+      {/* Floating Action Button */}
       <div className="fixed bottom-8 right-6 z-40 flex flex-col items-end gap-4 pb-safe pointer-events-none">
          <div className="pointer-events-auto">
          {isSelectionMode ? (
@@ -420,7 +452,7 @@ const App: React.FC = () => {
          </div>
       </div>
 
-      {/* Action Sheet (Context Menu) - Glass Effect */}
+      {/* Context Menu */}
       {contextMenuNote && (
         <>
             <div 
@@ -431,7 +463,7 @@ const App: React.FC = () => {
                 <div className="bg-white/85 dark:bg-[#1C1C1E]/85 backdrop-blur-2xl rounded-[20px] overflow-hidden shadow-2xl border border-white/20 dark:border-white/5">
                     <div className="p-4 border-b border-black/5 dark:border-white/5 text-center">
                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest truncate block px-8">
-                            {contextMenuNote.title || "UNTITLED"}
+                            {contextMenuNote.title || "无标题"}
                         </span>
                     </div>
                     <button 
@@ -456,7 +488,7 @@ const App: React.FC = () => {
                     <button 
                         onClick={() => {
                             setContextMenuNote(null);
-                            if(confirm('确认删除？')) handleDeleteNote(contextMenuNote.id);
+                            requestDeleteNote(contextMenuNote.id);
                         }}
                         className="w-full py-4 text-[16px] font-medium text-red-500 active:bg-black/5 dark:active:bg-white/10"
                     >
@@ -473,20 +505,40 @@ const App: React.FC = () => {
         </>
       )}
 
+      {/* Editor Modal */}
       <EditorModal 
         isOpen={isEditorOpen}
         note={currentEditingNote}
         onClose={() => setIsEditorOpen(false)}
         onSave={handleSaveNote}
-        onDelete={handleDeleteNote}
+        onDelete={requestDeleteNote}
         categories={categories}
       />
 
+      {/* Settings Modal */}
       <SettingsModal 
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
         onExport={handleExportData}
         onImport={handleImportData}
+      />
+
+      {/* Global Dialogs */}
+      <InputDialog 
+         isOpen={inputDialog.isOpen}
+         onClose={() => setInputDialog(prev => ({ ...prev, isOpen: false }))}
+         onConfirm={inputDialog.onConfirm}
+         title={inputDialog.title}
+         placeholder={inputDialog.placeholder}
+      />
+
+      <ConfirmDialog 
+         isOpen={confirmDialog.isOpen}
+         onClose={() => setConfirmDialog(prev => ({ ...prev, isOpen: false }))}
+         onConfirm={confirmDialog.onConfirm}
+         title={confirmDialog.title}
+         message={confirmDialog.message}
+         isDangerous={confirmDialog.isDangerous}
       />
     </div>
   );
