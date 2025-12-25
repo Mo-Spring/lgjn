@@ -9,6 +9,7 @@ import { ConfirmDialog, InputDialog } from './components/Dialogs';
 import { storage } from './services/storageService';
 import { StatusBar, Style } from '@capacitor/status-bar';
 import { Capacitor } from '@capacitor/core';
+import { App as CapacitorApp } from '@capacitor/app';
 
 const THEME_STORAGE_KEY = 'inspiration_capsules_theme';
 const VIEW_MODE_STORAGE_KEY = 'inspiration_capsules_view_mode';
@@ -103,6 +104,74 @@ const App: React.FC = () => {
       setSelectedNoteIds(new Set());
     }
   }, [isSelectionMode]);
+
+  // Handle Hardware Back Button for Main View
+  useEffect(() => {
+      if (!Capacitor.isNativePlatform()) return;
+
+      let backListener: any;
+
+      const setupBackListener = async () => {
+          backListener = await CapacitorApp.addListener('backButton', () => {
+              // 1. Editor Modal (Highest Priority)
+              // Handled by its own listener in EditorModal.tsx, but we check here to prevent fallthrough
+              if (isEditorOpen) {
+                  return;
+              }
+              
+              // 2. Global Dialogs
+              if (inputDialog.isOpen) {
+                  setInputDialog(prev => ({ ...prev, isOpen: false }));
+                  return;
+              }
+              if (confirmDialog.isOpen) {
+                  setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+                  return;
+              }
+
+              // 3. Settings Modal
+              if (isSettingsOpen) {
+                  setIsSettingsOpen(false);
+                  return;
+              }
+
+              // 4. Context Menu
+              if (contextMenuNote) {
+                  setContextMenuNote(null);
+                  return;
+              }
+
+              // 5. Selection Mode
+              if (isSelectionMode) {
+                  setIsSelectionMode(false);
+                  return;
+              }
+
+              // 6. Search
+              if (isSearchOpen) {
+                  setIsSearchOpen(false);
+                  return;
+              }
+
+              // 7. Default: Exit App (Minimize to Home)
+              CapacitorApp.exitApp();
+          });
+      };
+
+      setupBackListener();
+
+      return () => {
+          if (backListener) backListener.remove();
+      };
+  }, [
+      isEditorOpen, 
+      inputDialog.isOpen, 
+      confirmDialog.isOpen, 
+      isSettingsOpen, 
+      contextMenuNote, 
+      isSelectionMode, 
+      isSearchOpen
+  ]);
 
   const toggleTheme = () => {
     setTheme(prev => prev === 'light' ? 'dark' : 'light');
