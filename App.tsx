@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect, useMemo, useDeferredValue } from 'react';
-import { Search, BrainCircuit, Moon, Sun, Settings, LayoutGrid, List, Plus, Trash2, X, Archive, Menu, ChevronDown } from 'lucide-react';
+import { Search, BrainCircuit, Moon, Sun, LayoutGrid, List, Plus, Trash2, X, Archive, Menu } from 'lucide-react';
 import { Note, Category } from './types';
 import { CapsuleCard } from './components/CapsuleCard';
 import { EditorModal } from './components/EditorModal';
@@ -40,6 +41,17 @@ const App: React.FC = () => {
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [currentEditingNote, setCurrentEditingNote] = useState<Note | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  
+  // Track scroll for header effect
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+        setIsScrolled(window.scrollY > 10);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   useEffect(() => {
     const loadData = async () => {
@@ -159,7 +171,7 @@ const App: React.FC = () => {
   };
 
   const handleAddCategory = async () => {
-    const name = prompt("新分类名称：");
+    const name = prompt("Name for new collection:");
     if (name && name.trim()) {
         const newCat: Category = {
             id: crypto.randomUUID(),
@@ -179,7 +191,7 @@ const App: React.FC = () => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `inspiration-capsules-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    link.download = `inspiration-capsules-backup.json`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -195,13 +207,13 @@ const App: React.FC = () => {
         if (Array.isArray(importedData) || importedData.notes) {
             const importedNotes = Array.isArray(importedData) ? importedData : importedData.notes;
             const importedCats = importedData.categories || [];
-             if (confirm(`导入 ${importedNotes.length} 条笔记？`)) {
+             if (confirm(`Import ${importedNotes.length} notes?`)) {
                 await storage.importData(importedNotes, importedCats);
                 window.location.reload(); 
             }
         }
       } catch (err) {
-        alert('导入失败');
+        alert('Import failed');
       }
     };
     reader.readAsText(file);
@@ -227,44 +239,42 @@ const App: React.FC = () => {
   }, [notes, deferredSearchQuery, selectedCategoryId, categories]);
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans selection:bg-indigo-500/20 relative">
+    <div className="min-h-screen bg-[#FAFAFA] dark:bg-[#050505] text-slate-900 dark:text-slate-100 font-sans selection:bg-slate-300 dark:selection:bg-slate-700 relative transition-colors duration-500">
       
-      {/* Noise Texture Overlay */}
-      <div className="bg-noise" />
+      {/* Noise Texture */}
+      <div className="bg-noise opacity-50 dark:opacity-20" />
 
-      {/* Decorative Background Blurs */}
-      <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden opacity-40 dark:opacity-20">
-        <div className="absolute top-[-10%] left-[-10%] w-[80vw] h-[80vw] rounded-full bg-blue-300/30 dark:bg-blue-600/20 blur-[100px]" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[80vw] h-[80vw] rounded-full bg-purple-300/30 dark:bg-purple-600/20 blur-[100px]" />
-      </div>
-
-      {/* Sticky Header with Safe Area support */}
-      <header className="sticky top-0 z-40 pt-safe bg-slate-50/80 dark:bg-slate-950/80 backdrop-blur-xl border-b border-slate-200/50 dark:border-slate-800/50 transition-all">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+      {/* Header - Truly transparent initially, then blurs on scroll */}
+      <header 
+        className={`
+            sticky top-0 z-40 pt-safe transition-all duration-300
+            ${isScrolled ? 'bg-white/80 dark:bg-black/80 backdrop-blur-xl border-b border-black/5 dark:border-white/5' : 'bg-transparent'}
+        `}
+      >
+        <div className="max-w-7xl mx-auto px-5">
             <div className="h-14 flex items-center justify-between">
-                {/* Logo & Settings */}
-                <div className="flex items-center gap-4">
-                    <button onClick={() => setIsSettingsOpen(true)} className="p-2 -ml-2 rounded-full hover:bg-slate-200/50 dark:hover:bg-slate-800/50 text-slate-600 dark:text-slate-400 transition-colors">
-                        <Menu size={22} />
+                {/* Brand */}
+                <div className="flex items-center gap-3">
+                    <button onClick={() => setIsSettingsOpen(true)} className="p-2 -ml-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 text-slate-600 dark:text-slate-400 transition-colors">
+                        <Menu size={20} />
                     </button>
-                    <h1 className="text-lg font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
-                        灵感胶囊
-                        <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
-                    </h1>
+                    <span className="text-sm font-bold tracking-[0.2em] text-slate-900 dark:text-slate-100 uppercase">
+                        Capsules
+                    </span>
                 </div>
 
                 {/* Right Actions */}
                 <div className="flex items-center gap-1">
+                     {/* Search Input - Expanding */}
                     <div className={`
                         flex items-center transition-all duration-300 overflow-hidden
-                        ${isSearchOpen ? 'w-full absolute inset-x-0 top-0 h-14 bg-white dark:bg-slate-900 px-4 z-50' : 'w-10 bg-transparent'}
+                        ${isSearchOpen ? 'w-48 bg-black/5 dark:bg-white/10 px-3 rounded-full mr-2' : 'w-10 bg-transparent'}
                     `}>
                          <div className={`flex items-center w-full ${isSearchOpen ? '' : 'justify-end'}`}>
-                            {isSearchOpen && <Search size={18} className="text-slate-400 mr-2 flex-shrink-0" />}
                             <input 
                                 type="text"
-                                placeholder="搜索..."
-                                className={`bg-transparent border-none outline-none text-base w-full ${isSearchOpen ? 'block' : 'hidden'}`}
+                                placeholder="Search..."
+                                className={`bg-transparent border-none outline-none text-sm w-full h-8 ${isSearchOpen ? 'block' : 'hidden'}`}
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 autoFocus={isSearchOpen}
@@ -275,79 +285,84 @@ const App: React.FC = () => {
                                     setIsSearchOpen(!isSearchOpen);
                                     if (!isSearchOpen) setTimeout(() => document.querySelector('input')?.focus(), 100);
                                 }}
-                                className="p-2 rounded-full text-slate-500 hover:text-slate-900 dark:hover:text-white flex-shrink-0"
+                                className={`p-2 rounded-full text-slate-500 hover:text-slate-900 dark:hover:text-white flex-shrink-0 ${isSearchOpen ? '' : 'hover:bg-black/5 dark:hover:bg-white/10'}`}
                             >
-                                {isSearchOpen ? <X size={20} /> : <Search size={22} />}
+                                {isSearchOpen ? <X size={16} /> : <Search size={20} />}
                             </button>
                          </div>
                     </div>
 
                     <button 
                         onClick={() => setViewMode(prev => prev === 'grid' ? 'list' : 'grid')}
-                        className="p-2 text-slate-500 hover:text-slate-900 dark:hover:text-white rounded-full transition-colors"
+                        className="p-2 text-slate-500 hover:text-slate-900 dark:hover:text-white rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
                     >
-                        {viewMode === 'grid' ? <LayoutGrid size={22} /> : <List size={22} />}
+                        {viewMode === 'grid' ? <LayoutGrid size={20} /> : <List size={20} />}
+                    </button>
+
+                    <button 
+                        onClick={toggleTheme} 
+                        className="p-2 text-slate-500 hover:text-slate-900 dark:hover:text-white rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                    >
+                        {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
                     </button>
                     
                     <button 
                         onClick={toggleSelectionMode}
-                        className={`p-2 rounded-full transition-colors ${isSelectionMode ? 'text-indigo-600 bg-indigo-50 dark:bg-indigo-900/20' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'}`}
+                        className={`p-2 rounded-full transition-colors ${isSelectionMode ? 'text-white bg-slate-900 dark:bg-white dark:text-slate-900' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10'}`}
                     >
-                        <Archive size={22} />
+                        <Archive size={20} />
                     </button>
                 </div>
             </div>
 
-            {/* Category Pills (Scrollable) */}
-            <div className="pb-3 pt-1 flex items-center gap-2 overflow-x-auto no-scrollbar mask-linear-fade">
+            {/* Collections (Pills) */}
+            <div className="pb-4 pt-1 flex items-center gap-3 overflow-x-auto no-scrollbar mask-linear-fade">
                 <button 
                     onClick={() => setSelectedCategoryId('all')}
-                    className={`whitespace-nowrap px-4 py-1.5 rounded-full text-[13px] font-medium transition-all ${selectedCategoryId === 'all' ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-md' : 'bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800'}`}
+                    className={`whitespace-nowrap px-3 py-1.5 rounded-full text-[12px] font-bold tracking-wide uppercase transition-all border ${selectedCategoryId === 'all' ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 border-transparent' : 'bg-transparent border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-500 hover:border-slate-400'}`}
                 >
-                    全部
+                    All
                 </button>
                 {categories.map(cat => (
                     <button 
                         key={cat.id}
                         onClick={() => setSelectedCategoryId(cat.id)}
-                        className={`whitespace-nowrap px-4 py-1.5 rounded-full text-[13px] font-medium transition-all ${selectedCategoryId === cat.id ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-md' : 'bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800'}`}
+                        className={`whitespace-nowrap px-3 py-1.5 rounded-full text-[12px] font-bold tracking-wide uppercase transition-all border ${selectedCategoryId === cat.id ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 border-transparent' : 'bg-transparent border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-500 hover:border-slate-400'}`}
                     >
                         {cat.name}
                     </button>
                 ))}
                 <button 
                     onClick={handleAddCategory} 
-                    className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-indigo-500 flex-shrink-0"
+                    className="w-8 h-8 flex items-center justify-center rounded-full border border-dashed border-slate-300 dark:border-slate-700 text-slate-400 hover:text-slate-900 dark:hover:text-white flex-shrink-0"
                 >
-                    <Plus size={16} />
+                    <Plus size={14} />
                 </button>
             </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="relative z-0 max-w-7xl mx-auto px-4 sm:px-6 py-4 pb-32 animate-fade-in">
+      <main className="relative z-0 max-w-7xl mx-auto px-5 sm:px-6 py-4 pb-32 animate-fade-in">
         {loading ? (
              <div className="flex justify-center items-center h-40">
-                <div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+                <div className="w-5 h-5 border-2 border-slate-800 dark:border-slate-200 border-t-transparent rounded-full animate-spin"></div>
              </div>
         ) : (
              <>
                 {notes.length === 0 && !searchQuery ? (
-                  <div className="flex flex-col items-center justify-center min-h-[40vh] text-center px-6 mt-10">
-                    <div className="w-20 h-20 bg-slate-100 dark:bg-slate-900 rounded-[2rem] flex items-center justify-center mb-6 rotate-3">
-                        <BrainCircuit size={32} className="text-slate-400" />
-                    </div>
-                    <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-2">空空如也</h2>
-                    <p className="text-sm text-slate-500 dark:text-slate-400 max-w-xs leading-relaxed">
-                      点击右下角的按钮，捕捉你的第一个灵感瞬间。
+                  <div className="flex flex-col items-center justify-center min-h-[40vh] text-center px-6 mt-10 opacity-40">
+                    <BrainCircuit size={40} className="text-slate-400 mb-4" strokeWidth={1} />
+                    <h2 className="text-lg font-medium text-slate-800 dark:text-slate-100 mb-1">Begin Here</h2>
+                    <p className="text-xs text-slate-500 uppercase tracking-widest">
+                      Your mind is a universe
                     </p>
                   </div>
                 ) : (
                   <div className={
                         viewMode === 'grid' 
-                            ? "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-5 auto-rows-max" 
-                            : "flex flex-col gap-2 max-w-3xl mx-auto"
+                            ? "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 auto-rows-max" 
+                            : "flex flex-col gap-3 max-w-2xl mx-auto"
                     }>
                       {filteredNotes.map(note => (
                         <CapsuleCard 
@@ -367,33 +382,32 @@ const App: React.FC = () => {
         )}
       </main>
 
-      {/* Floating Action Button / Selection Bar */}
-      <div className="fixed bottom-6 right-6 z-40 flex flex-col items-end gap-4 pointer-events-none pb-safe">
+      {/* Floating Action Button */}
+      <div className="fixed bottom-8 right-8 z-40 flex flex-col items-end gap-4 pointer-events-none pb-safe">
          <div className="pointer-events-auto">
              {isSelectionMode ? (
-                 <div className="flex items-center gap-3 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md p-2 pr-5 rounded-full shadow-2xl border border-white/20 dark:border-slate-800/50 animate-slide-up">
+                 <div className="flex items-center gap-4 bg-white dark:bg-slate-900 p-2 pr-6 rounded-full shadow-2xl border border-slate-100 dark:border-slate-800 animate-slide-up">
                     <button 
                         onClick={() => setIsSelectionMode(false)}
-                        className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 active:bg-slate-200"
+                        className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300"
                     >
-                        <X size={20} />
+                        <X size={18} />
                     </button>
-                    <span className="text-sm font-medium text-slate-600 dark:text-slate-300">{selectedNoteIds.size}</span>
-                    <div className="h-4 w-px bg-slate-300 dark:bg-slate-700 mx-1"></div>
+                    <span className="text-sm font-bold text-slate-800 dark:text-slate-200">{selectedNoteIds.size} SELECTED</span>
                     <button 
                         onClick={handleBatchDelete}
                         disabled={selectedNoteIds.size === 0}
-                        className={`flex items-center gap-2 px-3 py-1.5 rounded-full font-bold text-sm transition-all ${selectedNoteIds.size > 0 ? 'text-red-500 bg-red-50 dark:bg-red-900/20' : 'text-slate-400'}`}
+                        className={`text-sm font-bold transition-all ${selectedNoteIds.size > 0 ? 'text-red-500' : 'text-slate-300'}`}
                     >
-                        删除
+                        DELETE
                     </button>
                  </div>
              ) : (
                 <button 
                     onClick={handleCreateNew}
-                    className="group flex items-center justify-center w-14 h-14 md:w-16 md:h-16 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-[24px] shadow-xl shadow-slate-900/20 active:scale-90 transition-all duration-300"
+                    className="group flex items-center justify-center w-16 h-16 bg-[#1A1A1A] dark:bg-[#EDEDED] text-white dark:text-black rounded-[22px] shadow-2xl hover:scale-105 active:scale-95 transition-all duration-300"
                 >
-                    <Plus size={28} strokeWidth={2.5} className="group-hover:rotate-90 transition-transform duration-300" />
+                    <Plus size={30} strokeWidth={2} />
                 </button>
              )}
          </div>
@@ -414,11 +428,6 @@ const App: React.FC = () => {
         onExport={handleExportData}
         onImport={handleImportData}
       />
-      
-      {/* Hidden Theme Toggle (Moved to Settings eventually, but keeping accessible for now via logo tap or separate logic if needed, currently rely on system or settings, but let's add a small toggle in the corner of settings or header) */}
-       <div className="fixed top-safe left-0 z-50 opacity-0 pointer-events-none">
-          {/* Placeholder for safe area logic debugging */}
-       </div>
     </div>
   );
 };
