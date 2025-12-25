@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { X, Download, Upload, Database, AlertTriangle, Info } from 'lucide-react';
+import { X, Download, Upload, Info } from 'lucide-react';
 
 interface SettingsModalProps {
   isOpen: boolean;
