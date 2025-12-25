@@ -80,6 +80,10 @@ const App: React.FC = () => {
             try {
                 // 开启 Overlay 模式（内容延伸到状态栏下方）
                 await StatusBar.setOverlaysWebView({ overlay: true });
+                // 明确设置背景透明 (Android)
+                if (Capacitor.getPlatform() === 'android') {
+                    await StatusBar.setBackgroundColor({ color: 'transparent' });
+                }
                 // 根据主题设置文字颜色
                 await StatusBar.setStyle({ style: theme === 'dark' ? Style.Dark : Style.Light });
             } catch (e) {
