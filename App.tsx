@@ -74,20 +74,22 @@ const App: React.FC = () => {
     root.classList.add(theme);
     localStorage.setItem(THEME_STORAGE_KEY, theme);
 
-    // 设置沉浸式状态栏
+    // 设置状态栏 (非沉浸式，实体背景)
     if (Capacitor.isNativePlatform()) {
         const setStatusBarStyle = async () => {
             try {
-                // 开启 Overlay 模式（内容延伸到状态栏下方）
-                await StatusBar.setOverlaysWebView({ overlay: true });
-                // 明确设置背景透明 (Android)
-                if (Capacitor.getPlatform() === 'android') {
-                    await StatusBar.setBackgroundColor({ color: 'transparent' });
-                }
+                // 关闭 Overlay 模式（内容在状态栏下方，不覆盖）
+                await StatusBar.setOverlaysWebView({ overlay: false });
+                
+                // 设置状态栏背景色 (与 Header 一致)
+                // Light: #F2F2F7, Dark: #000000
+                const color = theme === 'dark' ? '#000000' : '#F2F2F7';
+                await StatusBar.setBackgroundColor({ color: color });
+                
                 // 根据主题设置文字颜色
                 await StatusBar.setStyle({ style: theme === 'dark' ? Style.Dark : Style.Light });
             } catch (e) {
-                console.warn("Status bar not supported");
+                console.warn("Status bar not supported", e);
             }
         };
         setStatusBarStyle();
@@ -258,8 +260,8 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#F2F2F7] dark:bg-black text-slate-900 dark:text-slate-100 font-sans">
       
-      {/* Header - Glassmorphism */}
-      <header className="sticky top-0 z-40 bg-[#F2F2F7]/90 dark:bg-black/80 backdrop-blur-md border-b border-black/5 dark:border-white/10 pt-safe transition-all duration-300">
+      {/* Header - Sticky but distinct */}
+      <header className="sticky top-0 z-40 bg-[#F2F2F7] dark:bg-black border-b border-black/5 dark:border-white/10 transition-colors duration-300">
         <div className="max-w-3xl mx-auto px-4">
             <div className="h-14 flex items-center justify-between">
                 <div className="flex items-center gap-3">
