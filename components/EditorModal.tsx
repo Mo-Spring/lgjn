@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Note, CapsuleColor, Category } from '../types';
-import { Trash2, Folder, Calendar, ChevronDown, Check, X } from 'lucide-react';
+import { Trash2, Folder, ChevronDown, Check, X, Tag } from 'lucide-react';
 import { Capacitor } from '@capacitor/core';
 import { App as CapacitorApp } from '@capacitor/app';
 
@@ -57,7 +57,6 @@ export const EditorModal: React.FC<EditorModalProps> = ({ note, isOpen, onClose,
 
     if (isOpen) {
       setIsVisible(true);
-      // 双重 RAF 确保 DOM 挂载后才应用动画类，触发 Transition
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           setAnimate(true);
@@ -66,7 +65,6 @@ export const EditorModal: React.FC<EditorModalProps> = ({ note, isOpen, onClose,
 
       document.body.style.overflow = 'hidden';
 
-      // Setup Listeners
       const setupListener = async () => {
           if (Capacitor.isNativePlatform()) {
               backButtonListener = await CapacitorApp.addListener('backButton', () => {
@@ -81,13 +79,12 @@ export const EditorModal: React.FC<EditorModalProps> = ({ note, isOpen, onClose,
       setupListener();
 
     } else {
-      // 关闭流程：先反转动画，再移除组件
       setAnimate(false);
       setIsCategoryOpen(false);
       timer = setTimeout(() => {
         setIsVisible(false);
         document.body.style.overflow = '';
-      }, 500); // 匹配 CSS duration
+      }, 500);
     }
 
     return () => {
@@ -102,16 +99,13 @@ export const EditorModal: React.FC<EditorModalProps> = ({ note, isOpen, onClose,
     triggerClose(false);
   };
 
-  // 统一关闭入口
   const triggerClose = (shouldGoBack: boolean = true) => {
-    // 处理浏览器历史记录
     if (shouldGoBack && historyPushedRef.current) {
         try {
             window.history.back(); 
             historyPushedRef.current = false;
         } catch (e) { /* ignore */ }
     }
-    // 通知父组件修改 isOpen，触发 useEffect 的关闭动画流程
     onClose();
   };
 
@@ -148,14 +142,34 @@ export const EditorModal: React.FC<EditorModalProps> = ({ note, isOpen, onClose,
     triggerClose();
   };
 
-  const getBgColor = (c: CapsuleColor) => {
+  const handleDelete = () => {
+      if (note) {
+          onDelete(note.id);
+      }
+  };
+
+  // 颜色对应的环形边框颜色
+  const getColorRing = (c: CapsuleColor) => {
+      switch (c) {
+        case 'blue': return 'ring-blue-500';
+        case 'purple': return 'ring-purple-500';
+        case 'green': return 'ring-emerald-500';
+        case 'rose': return 'ring-rose-500';
+        case 'amber': return 'ring-amber-500';
+        case 'slate': return 'ring-slate-500';
+        default: return 'ring-slate-500';
+      }
+  };
+
+  // 颜色对应的背景色
+  const getColorBg = (c: CapsuleColor) => {
     switch (c) {
-      case 'blue': return 'bg-blue-500 shadow-blue-500/40 ring-blue-500/20';
-      case 'purple': return 'bg-purple-500 shadow-purple-500/40 ring-purple-500/20';
-      case 'green': return 'bg-emerald-500 shadow-emerald-500/40 ring-emerald-500/20';
-      case 'rose': return 'bg-rose-500 shadow-rose-500/40 ring-rose-500/20';
-      case 'amber': return 'bg-amber-500 shadow-amber-500/40 ring-amber-500/20';
-      case 'slate': return 'bg-slate-500 shadow-slate-500/40 ring-slate-500/20';
+      case 'blue': return 'bg-blue-500';
+      case 'purple': return 'bg-purple-500';
+      case 'green': return 'bg-emerald-500';
+      case 'rose': return 'bg-rose-500';
+      case 'amber': return 'bg-amber-500';
+      case 'slate': return 'bg-slate-500';
       default: return 'bg-slate-500';
     }
   };
@@ -176,7 +190,7 @@ export const EditorModal: React.FC<EditorModalProps> = ({ note, isOpen, onClose,
       {/* Panel */}
       <div 
         className={`
-            relative w-full sm:w-[600px] h-[80vh]
+            relative w-full sm:w-[600px] h-[92vh] sm:h-[85vh]
             bg-[#FAFAFA] dark:bg-[#121212] 
             rounded-t-[32px] sm:rounded-[32px]
             shadow-[0_-10px_60px_rgba(0,0,0,0.15)] dark:shadow-[0_-10px_60px_rgba(0,0,0,0.6)]
@@ -185,131 +199,148 @@ export const EditorModal: React.FC<EditorModalProps> = ({ note, isOpen, onClose,
             ${animate ? 'translate-y-0 scale-100 opacity-100' : 'translate-y-[100%] scale-95 opacity-80'}
         `}
       >
-        {/* Drag Handle Indicator */}
-        <div className="absolute top-0 left-0 right-0 h-7 flex justify-center pt-3 z-20 pointer-events-none">
-            <div className="w-12 h-1.5 rounded-full bg-slate-200 dark:bg-slate-700/50"></div>
+        {/* Drag Handle */}
+        <div className="absolute top-0 left-0 right-0 h-6 flex justify-center pt-2.5 z-40 pointer-events-none">
+            <div className="w-10 h-1 rounded-full bg-slate-300 dark:bg-slate-700/50"></div>
         </div>
 
-        {/* Toolbar */}
-        <div className="relative flex items-center justify-between px-5 pt-5 pb-4 min-h-[64px] bg-transparent z-10">
-           <button 
-              onClick={() => triggerClose()}
-              className="w-10 h-10 rounded-full flex items-center justify-center bg-transparent hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-slate-500 active:scale-90 relative z-20"
-            >
-              <X size={24} />
-          </button>
+        {/* --- Header & Tools Section (Sticky) --- */}
+        <div className="flex-none flex flex-col bg-white/80 dark:bg-[#1E1E20]/80 backdrop-blur-xl border-b border-black/5 dark:border-white/5 z-30 transition-colors">
+            
+            {/* Row 1: Navigation & Title */}
+            <div className="relative flex items-center justify-between px-4 pt-3 pb-1 h-[56px]">
+                <button 
+                    onClick={() => triggerClose()}
+                    className="w-9 h-9 rounded-full flex items-center justify-center bg-transparent hover:bg-slate-100 dark:hover:bg-white/10 transition-colors text-slate-500 dark:text-slate-400 active:scale-90 relative z-20"
+                >
+                    <X size={22} />
+                </button>
 
-          {/* Centered Title */}
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none pt-1">
-             <span className="text-lg font-bold text-slate-800 dark:text-slate-100 tracking-wide">
-                {note ? '编辑中' : '新灵感'}
-             </span>
-          </div>
+                {/* Centered Large Title */}
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none pt-2">
+                    <span className="text-[19px] font-bold text-slate-900 dark:text-white tracking-tight">
+                        {note ? '编辑中' : '新灵感'}
+                    </span>
+                </div>
 
-          <button 
-                onClick={handleSave}
-                className="px-6 py-2.5 bg-slate-900 dark:bg-white text-white dark:text-black rounded-full font-bold text-[15px] shadow-xl shadow-slate-900/10 active:scale-95 transition-all relative z-20"
-            >
-                完成
-          </button>
-        </div>
+                <button 
+                    onClick={handleSave}
+                    className="px-4 py-1.5 bg-slate-900 dark:bg-white text-white dark:text-black rounded-full font-bold text-[14px] shadow-lg shadow-slate-900/10 active:scale-95 transition-all relative z-20"
+                >
+                    完成
+                </button>
+            </div>
 
-        {/* Editor Area */}
-        <div className="flex-1 overflow-y-auto no-scrollbar relative flex flex-col">
-            <div className="max-w-xl mx-auto px-6 pt-4 pb-safe w-full flex-1 flex flex-col">
+            {/* Row 2: Tools (Category, Color, Delete) */}
+            <div className="flex items-center justify-between px-6 pb-4 pt-2">
                 
-                {/* Title */}
+                {/* Left: Category Picker */}
+                <div className="relative" ref={categoryRef}>
+                    <button 
+                        onClick={() => setIsCategoryOpen(!isCategoryOpen)}
+                        className={`
+                            flex items-center gap-2 px-3 py-1.5 rounded-full text-[13px] font-medium transition-all
+                            ${categoryId 
+                                ? 'bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-white' 
+                                : 'bg-transparent text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5'}
+                        `}
+                    >
+                        {categoryId ? (
+                            <>
+                                <Tag size={14} className="opacity-70" />
+                                <span>{categories.find(c => c.id === categoryId)?.name}</span>
+                            </>
+                        ) : (
+                            <>
+                                <Folder size={16} />
+                                <span>未分类</span>
+                            </>
+                        )}
+                        <ChevronDown size={12} className={`opacity-50 transition-transform ${isCategoryOpen ? 'rotate-180' : ''}`} />
+                    </button>
+
+                    {/* Category Dropdown */}
+                    {isCategoryOpen && (
+                        <div className="absolute top-full mt-2 left-0 w-48 bg-white dark:bg-[#2C2C2E] rounded-xl shadow-xl border border-black/5 dark:border-white/10 overflow-hidden animate-dropdown z-50">
+                            <button 
+                                onClick={() => { setCategoryId(''); setIsCategoryOpen(false); }}
+                                className="w-full text-left px-4 py-2.5 text-sm text-slate-500 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors border-b border-slate-50 dark:border-white/5"
+                            >
+                                无分类
+                            </button>
+                            <div className="max-h-[200px] overflow-y-auto no-scrollbar">
+                                {categories.map(cat => (
+                                    <button 
+                                        key={cat.id}
+                                        onClick={() => { setCategoryId(cat.id); setIsCategoryOpen(false); }}
+                                        className={`w-full text-left px-4 py-2.5 text-sm transition-colors hover:bg-slate-50 dark:hover:bg-white/5 flex items-center justify-between ${categoryId === cat.id ? 'text-slate-900 dark:text-white bg-slate-50 dark:bg-white/5 font-medium' : 'text-slate-600 dark:text-slate-300'}`}
+                                    >
+                                        <span className="truncate">{cat.name}</span>
+                                        {categoryId === cat.id && <Check size={14} />}
+                                    </button>
+                                ))}
+                            </div>
+                            {categories.length === 0 && (
+                                <div className="px-4 py-3 text-center text-slate-400 text-xs">暂无分类，请在主页添加</div>
+                            )}
+                        </div>
+                    )}
+                </div>
+
+                {/* Center: Color Dots */}
+                <div className="flex items-center gap-3">
+                    {COLORS.map(c => (
+                        <button
+                            key={c}
+                            onClick={() => setSelectedColor(c)}
+                            className={`
+                                w-5 h-5 rounded-full transition-all duration-300
+                                ${getColorBg(c)}
+                                ${selectedColor === c ? `scale-125 ring-2 ring-offset-2 ring-offset-[#FAFAFA] dark:ring-offset-[#1E1E20] ${getColorRing(c)}` : 'opacity-40 hover:opacity-80 hover:scale-110'}
+                            `}
+                        />
+                    ))}
+                </div>
+
+                {/* Right: Delete (Only if existing note) */}
+                <div className="w-[80px] flex justify-end">
+                    {note ? (
+                        <button 
+                            onClick={handleDelete}
+                            className="p-2 rounded-full text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all active:scale-90"
+                            title="删除"
+                        >
+                            <Trash2 size={18} />
+                        </button>
+                    ) : (
+                        <div className="w-8" /> // Spacer to balance layout
+                    )}
+                </div>
+            </div>
+        </div>
+
+        {/* --- Editor Area --- */}
+        <div className="flex-1 overflow-y-auto no-scrollbar relative flex flex-col">
+            <div className="max-w-xl mx-auto px-6 py-8 w-full flex-1 flex flex-col">
+                
+                {/* Title Input */}
                 <input
                     type="text"
                     placeholder="标题"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
-                    className="w-full text-left text-[32px] font-bold bg-transparent border-none outline-none placeholder:text-slate-300 dark:placeholder:text-slate-700 text-slate-900 dark:text-white leading-tight mb-6"
+                    className="w-full text-left text-[28px] font-bold bg-transparent border-none outline-none placeholder:text-slate-300 dark:placeholder:text-slate-700 text-slate-900 dark:text-white leading-tight mb-6"
                 />
                 
-                {/* Content */}
+                {/* Content Input */}
                 <textarea
                     ref={contentRef}
                     placeholder="捕捉灵感..."
                     value={content}
                     onChange={(e) => setContent(e.target.value)}
-                    className="w-full flex-1 resize-none text-left text-[18px] leading-relaxed bg-transparent border-none outline-none placeholder:text-slate-300 dark:placeholder:text-slate-700 text-slate-700 dark:text-slate-300 font-normal mb-8"
+                    className="w-full flex-1 resize-none text-left text-[17px] leading-relaxed bg-transparent border-none outline-none placeholder:text-slate-300 dark:placeholder:text-slate-700 text-slate-700 dark:text-slate-300 font-normal pb-20"
                     spellCheck={false}
                 />
-
-                {/* --- Bottom Floating Panel for Properties --- */}
-                <div className="space-y-4 pb-8 sticky bottom-0 bg-gradient-to-t from-[#FAFAFA] via-[#FAFAFA] to-transparent dark:from-[#121212] dark:via-[#121212] pt-12">
-                    
-                    {/* Color Picker - Centered & Horizontal Scroll */}
-                    <div className="flex items-center justify-center gap-4 overflow-x-auto no-scrollbar py-3 px-1">
-                        {COLORS.map(c => (
-                            <button
-                                key={c}
-                                onClick={() => setSelectedColor(c)}
-                                className={`
-                                    w-10 h-10 rounded-full transition-all flex items-center justify-center flex-shrink-0
-                                    ${getBgColor(c)} 
-                                    ${selectedColor === c ? 'scale-110 ring-4 ring-offset-2 ring-offset-[#FAFAFA] dark:ring-offset-[#121212]' : 'opacity-60 hover:opacity-100 scale-90'}
-                                `}
-                            >
-                                {selectedColor === c && <Check size={16} className="text-white drop-shadow-md" strokeWidth={3} />}
-                            </button>
-                        ))}
-                    </div>
-
-                    <div className="flex items-center gap-3">
-                        {/* Custom Category Dropdown */}
-                        <div className="relative flex-1" ref={categoryRef}>
-                            <button 
-                                onClick={() => setIsCategoryOpen(!isCategoryOpen)}
-                                className="w-full flex items-center justify-between p-4 bg-white dark:bg-[#1E1E20] rounded-2xl shadow-sm border border-slate-100 dark:border-white/5 active:scale-[0.99] transition-all hover:border-slate-200 dark:hover:border-white/10"
-                            >
-                                <div className="flex items-center gap-2.5">
-                                    <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-white/10 flex items-center justify-center text-slate-500 dark:text-slate-300">
-                                        <Folder size={15} />
-                                    </div>
-                                    <span className={`text-[15px] font-medium ${categoryId ? 'text-slate-900 dark:text-white' : 'text-slate-400'}`}>
-                                        {categoryId ? categories.find(c => c.id === categoryId)?.name || '未分类' : '选择分类'}
-                                    </span>
-                                </div>
-                                <ChevronDown size={18} className={`text-slate-400 transition-transform duration-300 ${isCategoryOpen ? 'rotate-180' : ''}`} />
-                            </button>
-
-                            {/* Dropdown Menu */}
-                            {isCategoryOpen && (
-                                <div className="absolute bottom-full mb-2 left-0 w-full bg-white dark:bg-[#2C2C2E] rounded-2xl shadow-xl border border-black/5 dark:border-white/10 overflow-hidden animate-dropdown origin-bottom z-30 max-h-[240px] overflow-y-auto">
-                                    <button 
-                                        onClick={() => { setCategoryId(''); setIsCategoryOpen(false); }}
-                                        className="w-full text-left px-4 py-3.5 text-[15px] font-medium text-slate-500 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors border-b border-slate-50 dark:border-white/5"
-                                    >
-                                        无分类
-                                    </button>
-                                    {categories.map(cat => (
-                                        <button 
-                                            key={cat.id}
-                                            onClick={() => { setCategoryId(cat.id); setIsCategoryOpen(false); }}
-                                            className={`w-full text-left px-4 py-3.5 text-[15px] font-medium transition-colors hover:bg-slate-50 dark:hover:bg-white/5 flex items-center justify-between ${categoryId === cat.id ? 'text-slate-900 dark:text-white bg-slate-50 dark:bg-white/5' : 'text-slate-600 dark:text-slate-300'}`}
-                                        >
-                                            {cat.name}
-                                            {categoryId === cat.id && <Check size={16} className="text-slate-900 dark:text-white" />}
-                                        </button>
-                                    ))}
-                                    {categories.length === 0 && (
-                                        <div className="px-4 py-8 text-center text-slate-400 text-sm">暂无分类</div>
-                                    )}
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Date Info (Read Only) */}
-                        <div className="h-[64px] px-5 bg-white dark:bg-[#1E1E20] rounded-2xl shadow-sm border border-slate-100 dark:border-white/5 flex items-center justify-center gap-2 text-slate-400 dark:text-slate-500">
-                             <Calendar size={18} />
-                             <span className="text-sm font-medium">
-                                {new Date().toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' })}
-                             </span>
-                        </div>
-                    </div>
-                </div>
             </div>
         </div>
       </div>
