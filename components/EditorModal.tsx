@@ -209,16 +209,28 @@ export const EditorModal: React.FC<EditorModalProps> = ({ note, isOpen, onClose,
             
             {/* Row 1: Navigation & Title */}
             <div className="relative flex items-center justify-between px-4 pt-3 pb-1 h-[56px]">
-                <button 
-                    onClick={() => triggerClose()}
-                    className="w-9 h-9 rounded-full flex items-center justify-center bg-transparent hover:bg-slate-100 dark:hover:bg-white/10 transition-colors text-slate-500 dark:text-slate-400 active:scale-90 relative z-20"
-                >
-                    <X size={22} />
-                </button>
+                {/* Left Action: Trash (if editing) or Close (if new) */}
+                {note ? (
+                    <button 
+                        onClick={handleDelete}
+                        className="w-9 h-9 rounded-full flex items-center justify-center bg-transparent hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-slate-400 hover:text-red-500 active:scale-90 relative z-20"
+                        title="删除"
+                    >
+                        <Trash2 size={22} />
+                    </button>
+                ) : (
+                    <button 
+                        onClick={() => triggerClose()}
+                        className="w-9 h-9 rounded-full flex items-center justify-center bg-transparent hover:bg-slate-100 dark:hover:bg-white/10 transition-colors text-slate-500 dark:text-slate-400 active:scale-90 relative z-20"
+                        title="关闭"
+                    >
+                        <X size={22} />
+                    </button>
+                )}
 
                 {/* Centered Large Title */}
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none pt-2">
-                    <span className="text-[19px] font-bold text-slate-900 dark:text-white tracking-tight">
+                    <span className="text-[20px] font-bold text-slate-900 dark:text-white tracking-tight">
                         {note ? '编辑中' : '新灵感'}
                     </span>
                 </div>
@@ -231,15 +243,15 @@ export const EditorModal: React.FC<EditorModalProps> = ({ note, isOpen, onClose,
                 </button>
             </div>
 
-            {/* Row 2: Tools (Category, Color, Delete) */}
-            <div className="flex items-center justify-between px-6 pb-4 pt-2">
+            {/* Row 2: Tools (Category Left, Color Right) */}
+            <div className="flex items-center justify-between px-6 pb-4 pt-2 gap-4">
                 
-                {/* Left: Category Picker */}
-                <div className="relative" ref={categoryRef}>
+                {/* Left: Category Picker (Expandable) */}
+                <div className="relative flex-shrink-0 max-w-[50%]" ref={categoryRef}>
                     <button 
                         onClick={() => setIsCategoryOpen(!isCategoryOpen)}
                         className={`
-                            flex items-center gap-2 px-3 py-1.5 rounded-full text-[13px] font-medium transition-all
+                            flex items-center gap-2 px-3.5 py-1.5 rounded-full text-[13px] font-medium transition-all w-full
                             ${categoryId 
                                 ? 'bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-white' 
                                 : 'bg-transparent text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5'}
@@ -247,16 +259,16 @@ export const EditorModal: React.FC<EditorModalProps> = ({ note, isOpen, onClose,
                     >
                         {categoryId ? (
                             <>
-                                <Tag size={14} className="opacity-70" />
-                                <span>{categories.find(c => c.id === categoryId)?.name}</span>
+                                <Tag size={14} className="opacity-70 flex-shrink-0" />
+                                <span className="truncate">{categories.find(c => c.id === categoryId)?.name}</span>
                             </>
                         ) : (
                             <>
-                                <Folder size={16} />
+                                <Folder size={16} className="flex-shrink-0" />
                                 <span>未分类</span>
                             </>
                         )}
-                        <ChevronDown size={12} className={`opacity-50 transition-transform ${isCategoryOpen ? 'rotate-180' : ''}`} />
+                        <ChevronDown size={12} className={`opacity-50 transition-transform flex-shrink-0 ${isCategoryOpen ? 'rotate-180' : ''}`} />
                     </button>
 
                     {/* Category Dropdown */}
@@ -287,34 +299,21 @@ export const EditorModal: React.FC<EditorModalProps> = ({ note, isOpen, onClose,
                     )}
                 </div>
 
-                {/* Center: Color Dots */}
-                <div className="flex items-center gap-3">
-                    {COLORS.map(c => (
-                        <button
-                            key={c}
-                            onClick={() => setSelectedColor(c)}
-                            className={`
-                                w-5 h-5 rounded-full transition-all duration-300
-                                ${getColorBg(c)}
-                                ${selectedColor === c ? `scale-125 ring-2 ring-offset-2 ring-offset-[#FAFAFA] dark:ring-offset-[#1E1E20] ${getColorRing(c)}` : 'opacity-40 hover:opacity-80 hover:scale-110'}
-                            `}
-                        />
-                    ))}
-                </div>
-
-                {/* Right: Delete (Only if existing note) */}
-                <div className="w-[80px] flex justify-end">
-                    {note ? (
-                        <button 
-                            onClick={handleDelete}
-                            className="p-2 rounded-full text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all active:scale-90"
-                            title="删除"
-                        >
-                            <Trash2 size={18} />
-                        </button>
-                    ) : (
-                        <div className="w-8" /> // Spacer to balance layout
-                    )}
+                {/* Right: Color Dots (Right Aligned & Reversed Order) */}
+                <div className="flex-1 flex justify-end">
+                    <div className="flex items-center gap-3 flex-row-reverse">
+                        {COLORS.map(c => (
+                            <button
+                                key={c}
+                                onClick={() => setSelectedColor(c)}
+                                className={`
+                                    w-5 h-5 rounded-full transition-all duration-300
+                                    ${getColorBg(c)}
+                                    ${selectedColor === c ? `scale-125 ring-2 ring-offset-2 ring-offset-[#FAFAFA] dark:ring-offset-[#1E1E20] ${getColorRing(c)}` : 'opacity-40 hover:opacity-80 hover:scale-110'}
+                                `}
+                            />
+                        ))}
+                    </div>
                 </div>
             </div>
         </div>
