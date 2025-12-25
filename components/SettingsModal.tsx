@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { X, Download, Upload, Database, AlertTriangle } from 'lucide-react';
+import { X, Download, Upload, Database, AlertTriangle, Info } from 'lucide-react';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -25,66 +25,67 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, o
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div 
-        className="absolute inset-0 bg-slate-900/30 dark:bg-black/50 backdrop-blur-sm transition-opacity" 
+        className="absolute inset-0 bg-black/20 dark:bg-black/60 backdrop-blur-sm transition-opacity" 
         onClick={onClose}
       />
-      <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-3xl shadow-2xl relative transform transition-all animate-in fade-in zoom-in-95 border border-slate-100 dark:border-slate-800 overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50">
-          <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-            <Database size={18} className="text-slate-500" />
-            数据管理
+      <div className="bg-white dark:bg-[#1C1C1E] w-full max-w-sm rounded-2xl shadow-2xl relative animate-enter overflow-hidden">
+        
+        <div className="px-5 py-4 border-b border-slate-100 dark:border-white/10 flex items-center justify-between">
+          <h2 className="text-[17px] font-semibold text-slate-900 dark:text-white">
+            设置
           </h2>
           <button 
             onClick={onClose}
-            className="p-1 rounded-full text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+            className="p-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500"
           >
-            <X size={20} />
+            <X size={18} />
           </button>
         </div>
-        <div className="p-6 space-y-6">
-          <div className="space-y-4">
-            <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl border border-blue-100 dark:border-blue-800/50">
-                <h3 className="font-medium text-blue-900 dark:text-blue-100 mb-1 flex items-center gap-2">
-                    <Download size={16} /> 导出备份
-                </h3>
-                <p className="text-sm text-blue-700 dark:text-blue-300 mb-3 leading-relaxed">
-                    将所有灵感胶囊打包成一个 JSON 文件保存到您的设备上。建议定期备份。
-                </p>
-                <button 
-                    onClick={onExport}
-                    className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors shadow-sm active:scale-[0.98]"
-                >
-                    下载备份文件
-                </button>
-            </div>
-            <div className="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-xl border border-amber-100 dark:border-amber-800/50">
-                <h3 className="font-medium text-amber-900 dark:text-amber-100 mb-1 flex items-center gap-2">
-                    <Upload size={16} /> 导入恢复
-                </h3>
-                <p className="text-sm text-amber-800 dark:text-amber-300 mb-3 leading-relaxed">
-                    从备份文件中恢复灵感胶囊。
-                    <span className="block mt-1 text-xs opacity-80 flex items-center gap-1">
-                        <AlertTriangle size={10} /> 注意：这也将合并现有数据。
-                    </span>
-                </p>
-                <input 
-                    type="file" 
-                    accept=".json" 
-                    ref={fileInputRef} 
-                    onChange={handleFileChange}
-                    className="hidden" 
-                />
-                <button 
-                    onClick={() => fileInputRef.current?.click()}
-                    className="w-full py-2 bg-amber-100 dark:bg-amber-800 hover:bg-amber-200 dark:hover:bg-amber-700 text-amber-900 dark:text-amber-100 rounded-lg text-sm font-medium transition-colors border border-amber-200 dark:border-amber-700 active:scale-[0.98]"
-                >
-                    选择备份文件导入
-                </button>
-            </div>
+
+        <div className="p-5 space-y-6">
+          <div className="space-y-3">
+            <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider ml-1">数据备份</h3>
+            
+            <button 
+                onClick={onExport}
+                className="w-full flex items-center gap-3 p-4 bg-[#F2F2F7] dark:bg-[#2C2C2E] rounded-xl text-left active:scale-95 transition-transform"
+            >
+                <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                    <Download size={16} />
+                </div>
+                <div>
+                    <div className="text-[15px] font-medium text-slate-900 dark:text-white">导出数据</div>
+                    <div className="text-[13px] text-slate-500 dark:text-slate-400">保存为 JSON 文件</div>
+                </div>
+            </button>
+
+            <button 
+                onClick={() => fileInputRef.current?.click()}
+                className="w-full flex items-center gap-3 p-4 bg-[#F2F2F7] dark:bg-[#2C2C2E] rounded-xl text-left active:scale-95 transition-transform"
+            >
+                <div className="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                    <Upload size={16} />
+                </div>
+                <div>
+                    <div className="text-[15px] font-medium text-slate-900 dark:text-white">恢复数据</div>
+                    <div className="text-[13px] text-slate-500 dark:text-slate-400">从 JSON 文件导入</div>
+                </div>
+            </button>
+            <input 
+                type="file" 
+                accept=".json" 
+                ref={fileInputRef} 
+                onChange={handleFileChange}
+                className="hidden" 
+            />
           </div>
-          <p className="text-xs text-center text-slate-400 dark:text-slate-500">
-             数据目前存储在您的设备本地存储中。
-          </p>
+
+          <div className="flex items-start gap-2 p-3 bg-blue-50 dark:bg-blue-900/10 rounded-lg">
+             <Info size={16} className="text-blue-500 mt-0.5 flex-shrink-0" />
+             <p className="text-xs text-blue-600 dark:text-blue-400 leading-relaxed">
+                所有数据均存储在您的本地浏览器中。请定期导出备份以防数据丢失。
+             </p>
+          </div>
         </div>
       </div>
     </div>
