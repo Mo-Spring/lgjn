@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect, useMemo, useDeferredValue } from 'react';
-import { Search, BrainCircuit, Moon, Sun, LayoutGrid, List, Plus, Trash2, X, Archive, Menu } from 'lucide-react';
+import { Search, Plus, X, Archive, Menu, Grid, List, CheckCircle2, Trash2, Edit2, MoreHorizontal } from 'lucide-react';
 import { Note, Category } from './types';
 import { CapsuleCard } from './components/CapsuleCard';
 import { EditorModal } from './components/EditorModal';
@@ -23,7 +22,8 @@ const App: React.FC = () => {
   
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     if (typeof window !== 'undefined') {
-        return (localStorage.getItem(THEME_STORAGE_KEY) as 'light' | 'dark') || 'light';
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) return 'dark';
+        return 'light';
     }
     return 'light';
   });
@@ -42,16 +42,8 @@ const App: React.FC = () => {
   const [currentEditingNote, setCurrentEditingNote] = useState<Note | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   
-  // Track scroll for header effect
-  const [isScrolled, setIsScrolled] = useState(false);
-
-  useEffect(() => {
-    const handleScroll = () => {
-        setIsScrolled(window.scrollY > 10);
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  // Context Menu State (Action Sheet)
+  const [contextMenuNote, setContextMenuNote] = useState<Note | null>(null);
 
   useEffect(() => {
     const loadData = async () => {
@@ -65,7 +57,7 @@ const App: React.FC = () => {
         setNotes(loadedNotes);
         setCategories(loadedCategories);
       } catch (error: any) {
-        console.error('Failed to load data from DB:', error);
+        console.error('Failed to load data:', error);
       } finally {
         setLoading(false);
       }
@@ -108,6 +100,12 @@ const App: React.FC = () => {
     setIsEditorOpen(true);
   };
 
+  const handleLongPressNote = (note: Note) => {
+    if (isSelectionMode) return;
+    if (window.navigator && window.navigator.vibrate) window.navigator.vibrate(50);
+    setContextMenuNote(note);
+  };
+
   const handleSaveNote = async (note: Note) => {
     setNotes(prev => {
       const existingIndex = prev.findIndex(n => n.id === note.id);
@@ -123,26 +121,23 @@ const App: React.FC = () => {
     try {
       await storage.saveNote(note);
     } catch (error: any) {
-      console.error("Failed to save note to DB:", error);
+      console.error("Save error:", error);
     }
   };
 
   const handleDeleteNote = async (id: string) => {
-    if (window.navigator && window.navigator.vibrate) {
-        window.navigator.vibrate(50);
-    }
     setNotes(prev => prev.filter(n => n.id !== id));
     try {
         await storage.deleteNote(id);
     } catch (error: any) {
-        console.error("Failed to delete note from DB:", error);
+        console.error("Delete error:", error);
     }
   };
 
   const handleBatchDelete = async () => {
     if (selectedNoteIds.size === 0) return;
 
-    if (confirm(`确定要删除选中的 ${selectedNoteIds.size} 个胶囊吗？`)) {
+    if (confirm(`确定删除 ${selectedNoteIds.size} 个胶囊吗？`)) {
       const idsToDelete: string[] = Array.from(selectedNoteIds);
       setNotes(prev => prev.filter(n => !selectedNoteIds.has(n.id)));
       try {
@@ -171,7 +166,7 @@ const App: React.FC = () => {
   };
 
   const handleAddCategory = async () => {
-    const name = prompt("Name for new collection:");
+    const name = prompt("请输入分类名称：");
     if (name && name.trim()) {
         const newCat: Category = {
             id: crypto.randomUUID(),
@@ -191,7 +186,7 @@ const App: React.FC = () => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `inspiration-capsules-backup.json`;
+    link.download = `inspiration-backup-${new Date().toISOString().slice(0, 10)}.json`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -207,13 +202,13 @@ const App: React.FC = () => {
         if (Array.isArray(importedData) || importedData.notes) {
             const importedNotes = Array.isArray(importedData) ? importedData : importedData.notes;
             const importedCats = importedData.categories || [];
-             if (confirm(`Import ${importedNotes.length} notes?`)) {
+             if (confirm(`确认导入 ${importedNotes.length} 条笔记？`)) {
                 await storage.importData(importedNotes, importedCats);
                 window.location.reload(); 
             }
         }
       } catch (err) {
-        alert('Import failed');
+        alert('文件格式错误');
       }
     };
     reader.readAsText(file);
@@ -239,137 +234,112 @@ const App: React.FC = () => {
   }, [notes, deferredSearchQuery, selectedCategoryId, categories]);
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA] dark:bg-[#050505] text-slate-900 dark:text-slate-100 font-sans selection:bg-slate-300 dark:selection:bg-slate-700 relative transition-colors duration-500">
+    <div className="min-h-screen bg-[#F2F2F7] dark:bg-black text-slate-900 dark:text-slate-100 font-sans">
       
-      {/* Noise Texture */}
-      <div className="bg-noise opacity-50 dark:opacity-20" />
-
-      {/* Header - Truly transparent initially, then blurs on scroll */}
-      <header 
-        className={`
-            sticky top-0 z-40 pt-safe transition-all duration-300
-            ${isScrolled ? 'bg-white/80 dark:bg-black/80 backdrop-blur-xl border-b border-black/5 dark:border-white/5' : 'bg-transparent'}
-        `}
-      >
-        <div className="max-w-7xl mx-auto px-5">
+      {/* Header - Glassmorphism */}
+      <header className="sticky top-0 z-40 bg-[#F2F2F7]/90 dark:bg-black/80 backdrop-blur-md border-b border-black/5 dark:border-white/10 pt-safe">
+        <div className="max-w-3xl mx-auto px-4">
             <div className="h-14 flex items-center justify-between">
-                {/* Brand */}
-                <div className="flex items-center gap-3">
-                    <button onClick={() => setIsSettingsOpen(true)} className="p-2 -ml-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 text-slate-600 dark:text-slate-400 transition-colors">
-                        <Menu size={20} />
+                <div className="flex items-center gap-2">
+                    <button onClick={() => setIsSettingsOpen(true)} className="p-2 -ml-2 rounded-full text-slate-900 dark:text-white active:bg-slate-200 dark:active:bg-white/10 transition-colors">
+                        <Menu size={24} strokeWidth={2.5} />
                     </button>
-                    <span className="text-sm font-bold tracking-[0.2em] text-slate-900 dark:text-slate-100 uppercase">
-                        Capsules
-                    </span>
+                    <h1 className="text-xl font-bold tracking-tight">灵感胶囊</h1>
                 </div>
 
-                {/* Right Actions */}
-                <div className="flex items-center gap-1">
-                     {/* Search Input - Expanding */}
-                    <div className={`
-                        flex items-center transition-all duration-300 overflow-hidden
-                        ${isSearchOpen ? 'w-48 bg-black/5 dark:bg-white/10 px-3 rounded-full mr-2' : 'w-10 bg-transparent'}
-                    `}>
-                         <div className={`flex items-center w-full ${isSearchOpen ? '' : 'justify-end'}`}>
-                            <input 
-                                type="text"
-                                placeholder="Search..."
-                                className={`bg-transparent border-none outline-none text-sm w-full h-8 ${isSearchOpen ? 'block' : 'hidden'}`}
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                autoFocus={isSearchOpen}
-                                onBlur={() => !searchQuery && setIsSearchOpen(false)}
-                            />
-                            <button 
-                                onClick={() => {
-                                    setIsSearchOpen(!isSearchOpen);
-                                    if (!isSearchOpen) setTimeout(() => document.querySelector('input')?.focus(), 100);
-                                }}
-                                className={`p-2 rounded-full text-slate-500 hover:text-slate-900 dark:hover:text-white flex-shrink-0 ${isSearchOpen ? '' : 'hover:bg-black/5 dark:hover:bg-white/10'}`}
-                            >
-                                {isSearchOpen ? <X size={16} /> : <Search size={20} />}
-                            </button>
-                         </div>
-                    </div>
+                <div className="flex items-center gap-2">
+                    <button 
+                        onClick={() => {
+                            if (!isSearchOpen) setTimeout(() => document.getElementById('search-input')?.focus(), 100);
+                            setIsSearchOpen(!isSearchOpen);
+                        }}
+                        className={`p-2 rounded-full text-slate-900 dark:text-white transition-colors ${isSearchOpen ? 'bg-slate-200 dark:bg-white/10' : ''}`}
+                    >
+                        <Search size={22} />
+                    </button>
 
                     <button 
                         onClick={() => setViewMode(prev => prev === 'grid' ? 'list' : 'grid')}
-                        className="p-2 text-slate-500 hover:text-slate-900 dark:hover:text-white rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                        className="p-2 rounded-full text-slate-900 dark:text-white"
                     >
-                        {viewMode === 'grid' ? <LayoutGrid size={20} /> : <List size={20} />}
-                    </button>
-
-                    <button 
-                        onClick={toggleTheme} 
-                        className="p-2 text-slate-500 hover:text-slate-900 dark:hover:text-white rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
-                    >
-                        {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
+                        {viewMode === 'grid' ? <Grid size={22} /> : <List size={22} />}
                     </button>
                     
                     <button 
                         onClick={toggleSelectionMode}
-                        className={`p-2 rounded-full transition-colors ${isSelectionMode ? 'text-white bg-slate-900 dark:bg-white dark:text-slate-900' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10'}`}
+                        className={`p-2 rounded-full transition-colors ${isSelectionMode ? 'bg-blue-500 text-white' : 'text-slate-900 dark:text-white'}`}
                     >
-                        <Archive size={20} />
+                        <CheckCircle2 size={22} />
                     </button>
                 </div>
             </div>
+            
+            {/* Expanded Search Bar */}
+            {isSearchOpen && (
+                <div className="pb-3 animate-enter">
+                    <input 
+                        id="search-input"
+                        type="text"
+                        placeholder="搜索灵感..."
+                        className="w-full bg-[#E5E5EA] dark:bg-[#1C1C1E] rounded-xl px-4 py-2 text-base outline-none text-slate-900 dark:text-white placeholder:text-slate-500"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                </div>
+            )}
 
-            {/* Collections (Pills) */}
-            <div className="pb-4 pt-1 flex items-center gap-3 overflow-x-auto no-scrollbar mask-linear-fade">
+            {/* Categories Scroll */}
+            <div className="pb-3 flex items-center gap-2 overflow-x-auto no-scrollbar">
                 <button 
                     onClick={() => setSelectedCategoryId('all')}
-                    className={`whitespace-nowrap px-3 py-1.5 rounded-full text-[12px] font-bold tracking-wide uppercase transition-all border ${selectedCategoryId === 'all' ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 border-transparent' : 'bg-transparent border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-500 hover:border-slate-400'}`}
+                    className={`whitespace-nowrap px-4 py-1.5 rounded-full text-[14px] font-medium transition-all ${selectedCategoryId === 'all' ? 'bg-slate-900 dark:bg-white text-white dark:text-black' : 'text-slate-500 dark:text-slate-400'}`}
                 >
-                    All
+                    全部
                 </button>
                 {categories.map(cat => (
                     <button 
                         key={cat.id}
                         onClick={() => setSelectedCategoryId(cat.id)}
-                        className={`whitespace-nowrap px-3 py-1.5 rounded-full text-[12px] font-bold tracking-wide uppercase transition-all border ${selectedCategoryId === cat.id ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 border-transparent' : 'bg-transparent border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-500 hover:border-slate-400'}`}
+                        className={`whitespace-nowrap px-4 py-1.5 rounded-full text-[14px] font-medium transition-all ${selectedCategoryId === cat.id ? 'bg-slate-900 dark:bg-white text-white dark:text-black' : 'text-slate-500 dark:text-slate-400'}`}
                     >
                         {cat.name}
                     </button>
                 ))}
                 <button 
                     onClick={handleAddCategory} 
-                    className="w-8 h-8 flex items-center justify-center rounded-full border border-dashed border-slate-300 dark:border-slate-700 text-slate-400 hover:text-slate-900 dark:hover:text-white flex-shrink-0"
+                    className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-200 dark:bg-white/10 text-slate-500 dark:text-slate-300 flex-shrink-0"
                 >
-                    <Plus size={14} />
+                    <Plus size={16} />
                 </button>
             </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="relative z-0 max-w-7xl mx-auto px-5 sm:px-6 py-4 pb-32 animate-fade-in">
+      <main className="max-w-3xl mx-auto px-4 py-4 pb-32 animate-fade-in min-h-[80vh]">
         {loading ? (
              <div className="flex justify-center items-center h-40">
-                <div className="w-5 h-5 border-2 border-slate-800 dark:border-slate-200 border-t-transparent rounded-full animate-spin"></div>
+                <div className="w-6 h-6 border-2 border-slate-300 border-t-blue-500 rounded-full animate-spin"></div>
              </div>
         ) : (
              <>
                 {notes.length === 0 && !searchQuery ? (
-                  <div className="flex flex-col items-center justify-center min-h-[40vh] text-center px-6 mt-10 opacity-40">
-                    <BrainCircuit size={40} className="text-slate-400 mb-4" strokeWidth={1} />
-                    <h2 className="text-lg font-medium text-slate-800 dark:text-slate-100 mb-1">Begin Here</h2>
-                    <p className="text-xs text-slate-500 uppercase tracking-widest">
-                      Your mind is a universe
-                    </p>
+                  <div className="flex flex-col items-center justify-center pt-32 opacity-40">
+                    <Archive size={48} className="text-slate-400 mb-4" strokeWidth={1} />
+                    <p className="text-slate-500 text-sm">暂无灵感，开始记录吧</p>
                   </div>
                 ) : (
                   <div className={
                         viewMode === 'grid' 
-                            ? "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 auto-rows-max" 
-                            : "flex flex-col gap-3 max-w-2xl mx-auto"
+                            ? "grid grid-cols-2 gap-3 auto-rows-max" 
+                            : "flex flex-col gap-2"
                     }>
                       {filteredNotes.map(note => (
                         <CapsuleCard 
                           key={note.id} 
                           note={note} 
                           onClick={handleEditNote}
-                          onDelete={handleDeleteNote}
+                          onLongPress={handleLongPressNote}
                           viewMode={viewMode}
                           isSelectionMode={isSelectionMode}
                           isSelected={selectedNoteIds.has(note.id)}
@@ -383,35 +353,86 @@ const App: React.FC = () => {
       </main>
 
       {/* Floating Action Button */}
-      <div className="fixed bottom-8 right-8 z-40 flex flex-col items-end gap-4 pointer-events-none pb-safe">
-         <div className="pointer-events-auto">
-             {isSelectionMode ? (
-                 <div className="flex items-center gap-4 bg-white dark:bg-slate-900 p-2 pr-6 rounded-full shadow-2xl border border-slate-100 dark:border-slate-800 animate-slide-up">
-                    <button 
-                        onClick={() => setIsSelectionMode(false)}
-                        className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300"
-                    >
-                        <X size={18} />
-                    </button>
-                    <span className="text-sm font-bold text-slate-800 dark:text-slate-200">{selectedNoteIds.size} SELECTED</span>
-                    <button 
-                        onClick={handleBatchDelete}
-                        disabled={selectedNoteIds.size === 0}
-                        className={`text-sm font-bold transition-all ${selectedNoteIds.size > 0 ? 'text-red-500' : 'text-slate-300'}`}
-                    >
-                        DELETE
-                    </button>
-                 </div>
-             ) : (
+      <div className="fixed bottom-8 right-6 z-40 flex flex-col items-end gap-4 pb-safe">
+         {isSelectionMode ? (
+             <div className="flex items-center gap-4 bg-white dark:bg-[#1C1C1E] p-2 pr-6 rounded-full shadow-2xl animate-slide-up border border-slate-100 dark:border-white/10">
                 <button 
-                    onClick={handleCreateNew}
-                    className="group flex items-center justify-center w-16 h-16 bg-[#1A1A1A] dark:bg-[#EDEDED] text-white dark:text-black rounded-[22px] shadow-2xl hover:scale-105 active:scale-95 transition-all duration-300"
+                    onClick={() => setIsSelectionMode(false)}
+                    className="w-10 h-10 rounded-full bg-[#F2F2F7] dark:bg-[#2C2C2E] flex items-center justify-center text-slate-600 dark:text-slate-300"
                 >
-                    <Plus size={30} strokeWidth={2} />
+                    <X size={20} />
                 </button>
-             )}
-         </div>
+                <span className="text-sm font-medium text-slate-900 dark:text-white">已选 {selectedNoteIds.size} 项</span>
+                <button 
+                    onClick={handleBatchDelete}
+                    disabled={selectedNoteIds.size === 0}
+                    className={`text-sm font-bold ${selectedNoteIds.size > 0 ? 'text-red-500' : 'text-slate-400'}`}
+                >
+                    删除
+                </button>
+             </div>
+         ) : (
+            <button 
+                onClick={handleCreateNew}
+                className="flex items-center justify-center w-14 h-14 bg-blue-600 text-white rounded-full shadow-lg shadow-blue-500/30 active:scale-90 transition-all hover:bg-blue-700"
+            >
+                <Plus size={28} />
+            </button>
+         )}
       </div>
+
+      {/* Action Sheet (Context Menu) */}
+      {contextMenuNote && (
+        <>
+            <div 
+                className="fixed inset-0 z-50 bg-black/20 dark:bg-black/60 backdrop-blur-[1px]" 
+                onClick={() => setContextMenuNote(null)}
+            />
+            <div className="fixed inset-x-4 bottom-8 z-50 animate-slide-up pb-safe">
+                <div className="bg-white/90 dark:bg-[#1C1C1E]/90 backdrop-blur-xl rounded-[14px] overflow-hidden shadow-2xl">
+                    <div className="p-4 border-b border-slate-200/50 dark:border-white/10 text-center">
+                        <span className="text-xs font-medium text-slate-400 truncate block px-8">
+                            {contextMenuNote.title || "未命名灵感"}
+                        </span>
+                    </div>
+                    <button 
+                        onClick={() => {
+                            setContextMenuNote(null);
+                            handleEditNote(contextMenuNote);
+                        }}
+                        className="w-full py-3.5 text-[16px] font-medium text-blue-600 dark:text-blue-400 active:bg-slate-100 dark:active:bg-white/10 border-b border-slate-200/50 dark:border-white/10"
+                    >
+                        编辑
+                    </button>
+                    <button 
+                        onClick={() => {
+                            setContextMenuNote(null);
+                            setIsSelectionMode(true);
+                            handleToggleSelectNote(contextMenuNote.id);
+                        }}
+                        className="w-full py-3.5 text-[16px] font-medium text-slate-900 dark:text-white active:bg-slate-100 dark:active:bg-white/10 border-b border-slate-200/50 dark:border-white/10"
+                    >
+                        选择
+                    </button>
+                    <button 
+                        onClick={() => {
+                            setContextMenuNote(null);
+                            if(confirm('确认删除？')) handleDeleteNote(contextMenuNote.id);
+                        }}
+                        className="w-full py-3.5 text-[16px] font-medium text-red-500 active:bg-slate-100 dark:active:bg-white/10"
+                    >
+                        删除
+                    </button>
+                </div>
+                <button 
+                    onClick={() => setContextMenuNote(null)}
+                    className="mt-3 w-full py-3.5 bg-white dark:bg-[#2C2C2E] rounded-[14px] text-[16px] font-semibold text-blue-600 dark:text-blue-400 shadow-lg active:scale-[0.98] transition-transform"
+                >
+                    取消
+                </button>
+            </div>
+        </>
+      )}
 
       <EditorModal 
         isOpen={isEditorOpen}
