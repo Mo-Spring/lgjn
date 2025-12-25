@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Note, CapsuleColor, Category } from '../types';
-import { Trash2, Folder, Calendar } from 'lucide-react';
+import { Trash2, Folder, Calendar, ChevronDown, Check } from 'lucide-react';
 
 interface EditorModalProps {
   note: Note | null;
@@ -22,7 +21,6 @@ export const EditorModal: React.FC<EditorModalProps> = ({ note, isOpen, onClose,
   const [isClosing, setIsClosing] = useState(false);
   
   const contentRef = useRef<HTMLTextAreaElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -35,7 +33,7 @@ export const EditorModal: React.FC<EditorModalProps> = ({ note, isOpen, onClose,
       } else {
         setTitle('');
         setContent('');
-        setSelectedColor(COLORS[Math.floor(Math.random() * COLORS.length)]);
+        setSelectedColor('blue');
         setCategoryId('');
         setTimeout(() => {
             if (window.innerWidth > 768) contentRef.current?.focus();
@@ -74,16 +72,15 @@ export const EditorModal: React.FC<EditorModalProps> = ({ note, isOpen, onClose,
     handleClose();
   };
 
-  // 这里的颜色仅用于选择器的小圆点，需要对应高级配色
-  const getColorClass = (c: CapsuleColor) => {
+  const getBgColor = (c: CapsuleColor) => {
     switch (c) {
-      case 'blue': return 'bg-slate-300 dark:bg-slate-600';
-      case 'purple': return 'bg-[#d8d4e0] dark:bg-[#4a4759]';
-      case 'green': return 'bg-[#dce3de] dark:bg-[#344239]';
-      case 'rose': return 'bg-[#e3dcdc] dark:bg-[#4d3a3a]';
-      case 'amber': return 'bg-[#e3ded4] dark:bg-[#4d4533]';
-      case 'slate': return 'bg-slate-200 dark:bg-slate-700';
-      default: return 'bg-gray-400';
+      case 'blue': return 'bg-blue-500';
+      case 'purple': return 'bg-purple-500';
+      case 'green': return 'bg-emerald-500';
+      case 'rose': return 'bg-rose-500';
+      case 'amber': return 'bg-amber-500';
+      case 'slate': return 'bg-slate-500';
+      default: return 'bg-slate-500';
     }
   };
 
@@ -94,7 +91,7 @@ export const EditorModal: React.FC<EditorModalProps> = ({ note, isOpen, onClose,
       {/* Backdrop */}
       <div 
         className={`
-            absolute inset-0 bg-slate-900/20 dark:bg-black/60 backdrop-blur-[2px] transition-opacity duration-300
+            absolute inset-0 bg-black/20 dark:bg-black/60 backdrop-blur-sm transition-opacity duration-300
             ${isOpen && !isClosing ? 'opacity-100' : 'opacity-0'}
         `}
         onClick={handleSave}
@@ -102,119 +99,118 @@ export const EditorModal: React.FC<EditorModalProps> = ({ note, isOpen, onClose,
       
       {/* Panel */}
       <div 
-        ref={containerRef}
         className={`
-            relative w-full sm:w-[90vw] sm:max-w-3xl sm:h-[85vh] h-[92vh]
-            bg-[#FAFAFA] dark:bg-[#121212] 
-            rounded-t-[32px] sm:rounded-3xl
-            shadow-2xl shadow-black/10
+            relative w-full sm:w-[600px] h-[95vh] sm:h-[80vh]
+            bg-[#F2F2F7] dark:bg-[#1C1C1E] 
+            rounded-t-[20px] sm:rounded-[20px]
+            shadow-2xl
             flex flex-col overflow-hidden
             transform transition-transform duration-300 cubic-bezier(0.2, 0.9, 0.3, 1)
             ${isOpen && !isClosing ? 'translate-y-0 scale-100' : 'translate-y-full sm:translate-y-10 sm:scale-95 sm:opacity-0'}
         `}
       >
-        {/* Drag Handle */}
-        <div className="w-full h-5 flex items-center justify-center sm:hidden flex-shrink-0" onClick={handleSave}>
-            <div className="w-10 h-1 bg-slate-200 dark:bg-slate-800 rounded-full mt-2" />
-        </div>
-
         {/* Toolbar */}
-        <div className="flex items-center justify-between px-6 py-3 sm:py-5 flex-shrink-0">
+        <div className="flex items-center justify-between px-4 py-3 bg-white dark:bg-[#2C2C2E] border-b border-slate-200 dark:border-black/50 z-10">
            <button 
-              onClick={handleSave}
-              className="sm:hidden text-slate-500 font-medium text-[15px]"
+              onClick={handleClose}
+              className="text-blue-500 dark:text-blue-400 font-medium text-[16px] px-2"
             >
               取消
           </button>
 
-          <div className="hidden sm:flex items-center gap-2 bg-white dark:bg-slate-900 rounded-full p-1.5 border border-slate-100 dark:border-slate-800">
-             {COLORS.map(c => (
-                <button
-                    key={c}
-                    onClick={() => setSelectedColor(c)}
-                    className={`
-                        w-5 h-5 rounded-full transition-all duration-300
-                        ${getColorClass(c)} 
-                        ${selectedColor === c ? 'scale-110 ring-2 ring-offset-2 ring-offset-white dark:ring-offset-slate-900 ring-slate-400' : 'opacity-60 hover:opacity-100'}
-                    `}
-                />
-             ))}
-          </div>
+          <span className="text-[16px] font-semibold text-slate-900 dark:text-white">
+            {note ? '编辑灵感' : '新灵感'}
+          </span>
 
-          <div className="flex items-center gap-3 ml-auto">
-             {note && (
-              <button 
-                onClick={() => { onDelete(note.id); onClose(); }}
-                className="p-2.5 text-slate-400 hover:text-red-500 transition-colors rounded-full hover:bg-red-50 dark:hover:bg-red-900/10"
-              >
-                <Trash2 size={18} />
-              </button>
-            )}
-            <button 
+          <button 
                 onClick={handleSave}
-                className="bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 px-6 py-2 rounded-full text-sm font-bold shadow-lg shadow-slate-900/10 active:scale-95 transition-all"
+                className="text-blue-500 dark:text-blue-400 font-bold text-[16px] px-2"
             >
                 完成
-            </button>
-          </div>
-        </div>
-
-        {/* Mobile Color Picker */}
-        <div className="sm:hidden px-6 pb-2 flex items-center justify-center gap-4 overflow-x-auto no-scrollbar py-2">
-            {COLORS.map(c => (
-                <button
-                    key={c}
-                    onClick={() => setSelectedColor(c)}
-                    className={`
-                        w-6 h-6 rounded-full transition-all duration-300
-                        ${getColorClass(c)} 
-                        ${selectedColor === c ? 'scale-125 ring-2 ring-offset-2 ring-offset-[#FAFAFA] dark:ring-offset-[#121212] ring-slate-400' : 'opacity-50'}
-                    `}
-                />
-             ))}
+          </button>
         </div>
 
         {/* Editor Area */}
-        <div className="flex-1 overflow-y-auto px-6 sm:px-12 py-2 no-scrollbar">
-            <div className="max-w-2xl mx-auto space-y-5 pb-[40vh]">
+        <div className="flex-1 overflow-y-auto no-scrollbar bg-white dark:bg-[#1C1C1E]">
+            <div className="max-w-xl mx-auto p-5 pb-32 space-y-6">
                 
-                {/* Meta */}
-                <div className="flex items-center gap-3 text-xs text-slate-400 dark:text-slate-500 font-medium tracking-wide">
-                    <div className="flex items-center gap-1.5 bg-white dark:bg-slate-800/50 px-3 py-1.5 rounded-full border border-slate-100 dark:border-slate-800">
-                        <Folder size={12} />
-                        <select 
-                            value={categoryId}
-                            onChange={(e) => setCategoryId(e.target.value)}
-                            className="bg-transparent border-none outline-none appearance-none cursor-pointer pr-2 text-slate-600 dark:text-slate-300 uppercase tracking-wider"
-                        >
-                            <option value="">Uncategorized</option>
-                            {categories.map(cat => (
-                                <option key={cat.id} value={cat.id}>{cat.name}</option>
-                            ))}
-                        </select>
-                    </div>
-                    <div className="flex items-center gap-1.5 px-2">
-                        <Calendar size={12} />
-                        <span className="uppercase tracking-wider">{new Date(note?.updatedAt || Date.now()).toLocaleDateString('en-US', {month: 'short', day:'numeric'})}</span>
-                    </div>
-                </div>
-
+                {/* Title */}
                 <input
                     type="text"
-                    placeholder="Title"
+                    placeholder="标题"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
-                    className="w-full text-3xl sm:text-4xl font-bold tracking-tight bg-transparent border-none outline-none placeholder:text-slate-200 dark:placeholder:text-slate-800 text-slate-900 dark:text-white"
+                    className="w-full text-2xl font-bold bg-transparent border-none outline-none placeholder:text-slate-300 dark:placeholder:text-slate-600 text-slate-900 dark:text-white"
                 />
                 
+                {/* Content */}
                 <textarea
                     ref={contentRef}
-                    placeholder="Capture your thought..."
+                    placeholder="写下你的想法..."
                     value={content}
                     onChange={(e) => setContent(e.target.value)}
-                    className="w-full h-full min-h-[400px] resize-none text-lg leading-relaxed bg-transparent border-none outline-none placeholder:text-slate-300 dark:placeholder:text-slate-700 text-slate-600 dark:text-slate-300 font-normal"
+                    className="w-full min-h-[300px] resize-none text-[17px] leading-relaxed bg-transparent border-none outline-none placeholder:text-slate-300 dark:placeholder:text-slate-600 text-slate-800 dark:text-slate-200"
                     spellCheck={false}
                 />
+
+                {/* Properties */}
+                <div className="pt-6 space-y-4">
+                    {/* Category */}
+                    <div className="flex items-center justify-between p-3 bg-[#F2F2F7] dark:bg-[#2C2C2E] rounded-xl">
+                        <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
+                            <Folder size={18} />
+                            <span className="text-sm">分类</span>
+                        </div>
+                        <div className="relative">
+                            <select 
+                                value={categoryId}
+                                onChange={(e) => setCategoryId(e.target.value)}
+                                className="appearance-none bg-transparent border-none outline-none text-slate-900 dark:text-slate-200 text-sm font-medium pr-6 text-right w-full"
+                            >
+                                <option value="">未分类</option>
+                                {categories.map(cat => (
+                                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                                ))}
+                            </select>
+                            <ChevronDown size={14} className="absolute right-0 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                        </div>
+                    </div>
+
+                    {/* Color Picker */}
+                    <div className="p-3 bg-[#F2F2F7] dark:bg-[#2C2C2E] rounded-xl flex items-center justify-between">
+                         <span className="text-sm text-slate-500 dark:text-slate-400 ml-1">颜色标签</span>
+                         <div className="flex items-center gap-3">
+                            {COLORS.map(c => (
+                                <button
+                                    key={c}
+                                    onClick={() => setSelectedColor(c)}
+                                    className={`
+                                        w-6 h-6 rounded-full transition-all flex items-center justify-center
+                                        ${getBgColor(c)} 
+                                        ${selectedColor === c ? 'ring-2 ring-offset-2 ring-offset-[#F2F2F7] dark:ring-offset-[#2C2C2E] ring-slate-400' : 'opacity-70'}
+                                    `}
+                                >
+                                    {selectedColor === c && <Check size={12} className="text-white" strokeWidth={3} />}
+                                </button>
+                            ))}
+                         </div>
+                    </div>
+
+                    <div className="flex items-center justify-center pt-4">
+                        <span className="text-xs text-slate-400 dark:text-slate-600">
+                            {note ? `上次编辑于 ${new Date(note.updatedAt).toLocaleString('zh-CN')}` : ' '}
+                        </span>
+                    </div>
+
+                    {note && (
+                        <button 
+                            onClick={() => { onDelete(note.id); onClose(); }}
+                            className="w-full py-3 text-red-500 bg-[#F2F2F7] dark:bg-[#2C2C2E] rounded-xl text-sm font-medium active:scale-95 transition-transform"
+                        >
+                            删除此胶囊
+                        </button>
+                    )}
+                </div>
             </div>
         </div>
       </div>
