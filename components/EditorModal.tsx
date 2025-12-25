@@ -142,7 +142,7 @@ export const EditorModal: React.FC<EditorModalProps> = ({ note, isOpen, onClose,
       {/* Panel */}
       <div 
         className={`
-            relative w-full sm:w-[600px] h-[80vh] sm:h-[85vh]
+            relative w-full sm:w-[600px] h-[80vh]
             bg-[#FAFAFA] dark:bg-[#121212] 
             rounded-t-[28px] sm:rounded-[28px]
             shadow-[0_-10px_40px_rgba(0,0,0,0.15)] dark:shadow-[0_-10px_40px_rgba(0,0,0,0.5)]
