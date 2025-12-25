@@ -22,7 +22,10 @@ export const EditorModal: React.FC<EditorModalProps> = ({ note, isOpen, onClose,
   const [selectedColor, setSelectedColor] = useState<CapsuleColor>('blue');
   const [categoryId, setCategoryId] = useState<string>('');
   
-  const [isClosing, setIsClosing] = useState(false);
+  // 动画控制状态
+  const [isVisible, setIsVisible] = useState(false); // 控制组件是否渲染
+  const [animate, setAnimate] = useState(false);     // 控制 CSS Transform
+  
   const [isCategoryOpen, setIsCategoryOpen] = useState(false);
   
   const contentRef = useRef<HTMLTextAreaElement>(null);
@@ -31,66 +34,86 @@ export const EditorModal: React.FC<EditorModalProps> = ({ note, isOpen, onClose,
 
   // 初始化数据
   useEffect(() => {
-    if (isOpen) {
-      if (note) {
+    if (isOpen && note) {
         setTitle(note.title);
         setContent(note.content);
         setSelectedColor(note.color);
         setCategoryId(note.categoryId || '');
-      } else {
+    } else if (isOpen && !note) {
         setTitle('');
         setContent('');
         setSelectedColor('blue');
         setCategoryId('');
-        // Focus on Content for new notes
         setTimeout(() => {
             contentRef.current?.focus();
         }, 400);
-      }
     }
   }, [isOpen, note]);
 
-  // 返回键处理 (History API & Native Hardware Button)
+  // 生命周期与动画控制
   useEffect(() => {
-    if (isOpen) {
-      setIsClosing(false);
-      
-      let backButtonListener: any;
+    let backButtonListener: any;
+    let timer: any;
 
+    if (isOpen) {
+      setIsVisible(true);
+      // 双重 RAF 确保 DOM 挂载后才应用动画类，触发 Transition
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setAnimate(true);
+        });
+      });
+
+      document.body.style.overflow = 'hidden';
+
+      // Setup Listeners
       const setupListener = async () => {
           if (Capacitor.isNativePlatform()) {
-              // Native: 监听硬件返回键，拦截并关闭 Modal
               backButtonListener = await CapacitorApp.addListener('backButton', () => {
-                  handleClose(false); 
+                  triggerClose(); 
               });
           } else {
-              // Web: 使用 History API
               window.history.pushState({ modal: 'editor' }, '', window.location.href);
               historyPushedRef.current = true;
               window.addEventListener('popstate', handlePopState);
           }
       };
-
       setupListener();
 
-      const handlePopState = () => {
-        // 浏览器后退触发，historyPushed 已经被消费了
-        historyPushedRef.current = false;
-        handleClose(false);
-      };
-
-      document.body.style.overflow = 'hidden';
-
-      return () => {
-        if (backButtonListener) {
-            backButtonListener.remove();
-        }
-        window.removeEventListener('popstate', handlePopState);
+    } else {
+      // 关闭流程：先反转动画，再移除组件
+      setAnimate(false);
+      setIsCategoryOpen(false);
+      timer = setTimeout(() => {
+        setIsVisible(false);
         document.body.style.overflow = '';
-        historyPushedRef.current = false;
-      };
+      }, 500); // 匹配 CSS duration
     }
+
+    return () => {
+      if (backButtonListener) backButtonListener.remove();
+      window.removeEventListener('popstate', handlePopState);
+      clearTimeout(timer);
+    };
   }, [isOpen]);
+
+  const handlePopState = () => {
+    historyPushedRef.current = false;
+    triggerClose(false);
+  };
+
+  // 统一关闭入口
+  const triggerClose = (shouldGoBack: boolean = true) => {
+    // 处理浏览器历史记录
+    if (shouldGoBack && historyPushedRef.current) {
+        try {
+            window.history.back(); 
+            historyPushedRef.current = false;
+        } catch (e) { /* ignore */ }
+    }
+    // 通知父组件修改 isOpen，触发 useEffect 的关闭动画流程
+    onClose();
+  };
 
   // 点击外部关闭分类下拉
   useEffect(() => {
@@ -107,29 +130,9 @@ export const EditorModal: React.FC<EditorModalProps> = ({ note, isOpen, onClose,
     };
   }, [isCategoryOpen]);
 
-  const handleClose = (shouldGoBack: boolean = true) => {
-    setIsClosing(true);
-    
-    // 只有当我们确实 push 过 history，且是主动关闭（点击按钮）时，才手动 back
-    if (shouldGoBack && historyPushedRef.current) {
-        try {
-            window.history.back(); 
-            historyPushedRef.current = false;
-        } catch (e) {
-            // ignore
-        }
-    }
-    
-    setTimeout(() => {
-        onClose();
-        setIsClosing(false);
-        setIsCategoryOpen(false);
-    }, 400); // Wait for animation
-  };
-
   const handleSave = () => {
     if (!content.trim() && !title.trim()) {
-      handleClose();
+      triggerClose();
       return;
     }
     const newNote: Note = {
@@ -142,7 +145,7 @@ export const EditorModal: React.FC<EditorModalProps> = ({ note, isOpen, onClose,
       updatedAt: Date.now(),
     };
     onSave(newNote);
-    handleClose();
+    triggerClose();
   };
 
   const getBgColor = (c: CapsuleColor) => {
@@ -157,17 +160,17 @@ export const EditorModal: React.FC<EditorModalProps> = ({ note, isOpen, onClose,
     }
   };
 
-  if (!isOpen && !isClosing) return null;
+  if (!isVisible) return null;
 
   return (
-    <div className={`fixed inset-0 z-50 flex flex-col justify-end sm:justify-center sm:items-center ${isClosing ? 'pointer-events-none' : ''}`}>
+    <div className={`fixed inset-0 z-50 flex flex-col justify-end sm:justify-center sm:items-center`}>
       {/* Backdrop */}
       <div 
         className={`
-            absolute inset-0 bg-black/20 dark:bg-black/70 backdrop-blur-md transition-opacity duration-400 ease-out
-            ${isOpen && !isClosing ? 'opacity-100' : 'opacity-0'}
+            absolute inset-0 bg-black/20 dark:bg-black/70 backdrop-blur-md transition-opacity duration-500 ease-out
+            ${animate ? 'opacity-100' : 'opacity-0'}
         `}
-        onClick={() => handleClose()}
+        onClick={() => triggerClose()}
       />
       
       {/* Panel */}
@@ -179,7 +182,7 @@ export const EditorModal: React.FC<EditorModalProps> = ({ note, isOpen, onClose,
             shadow-[0_-10px_60px_rgba(0,0,0,0.15)] dark:shadow-[0_-10px_60px_rgba(0,0,0,0.6)]
             flex flex-col overflow-hidden ring-1 ring-black/5 dark:ring-white/10
             transform transition-all duration-500 cubic-bezier(0.34, 1.56, 0.64, 1)
-            ${isOpen && !isClosing ? 'translate-y-0 scale-100 opacity-100' : 'translate-y-[105%] scale-95 opacity-50'}
+            ${animate ? 'translate-y-0 scale-100 opacity-100' : 'translate-y-[100%] scale-95 opacity-80'}
         `}
       >
         {/* Drag Handle Indicator */}
@@ -190,7 +193,7 @@ export const EditorModal: React.FC<EditorModalProps> = ({ note, isOpen, onClose,
         {/* Toolbar */}
         <div className="flex items-center justify-between px-5 pt-5 pb-4 min-h-[64px] bg-transparent z-10">
            <button 
-              onClick={() => handleClose()}
+              onClick={() => triggerClose()}
               className="w-10 h-10 rounded-full flex items-center justify-center bg-transparent hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-slate-500 active:scale-90"
             >
               <X size={24} />
