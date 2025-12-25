@@ -1,7 +1,7 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Note, CapsuleColor, Category } from '../types';
-import { X, Trash2, Folder, Check, BrainCircuit } from 'lucide-react';
-import { generateNoteEnhancement } from '../services/geminiService';
+import { X, Trash2, Save, Folder, Check, Calendar } from 'lucide-react';
 
 interface EditorModalProps {
   note: Note | null;
@@ -12,14 +12,13 @@ interface EditorModalProps {
   categories: Category[];
 }
 
-const COLORS: CapsuleColor[] = ['slate', 'rose', 'amber', 'green', 'blue', 'purple'];
+const COLORS: CapsuleColor[] = ['blue', 'purple', 'green', 'rose', 'amber', 'slate'];
 
 export const EditorModal: React.FC<EditorModalProps> = ({ note, isOpen, onClose, onSave, onDelete, categories }) => {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
-  const [selectedColor, setSelectedColor] = useState<CapsuleColor>('slate');
+  const [selectedColor, setSelectedColor] = useState<CapsuleColor>('blue');
   const [categoryId, setCategoryId] = useState<string>('');
-  const [isEnhancing, setIsEnhancing] = useState(false);
   
   const contentRef = useRef<HTMLTextAreaElement>(null);
 
@@ -35,7 +34,9 @@ export const EditorModal: React.FC<EditorModalProps> = ({ note, isOpen, onClose,
         setContent('');
         setSelectedColor(COLORS[Math.floor(Math.random() * COLORS.length)]);
         setCategoryId('');
-        setTimeout(() => contentRef.current?.focus(), 150);
+        setTimeout(() => {
+            contentRef.current?.focus();
+        }, 300);
       }
     }
   }, [isOpen, note]);
@@ -60,107 +61,127 @@ export const EditorModal: React.FC<EditorModalProps> = ({ note, isOpen, onClose,
     onClose();
   };
 
-  const handleEnhanceNote = async () => {
-    if (!content.trim() || isEnhancing) return;
-    setIsEnhancing(true);
-    try {
-        const enhancedContent = await generateNoteEnhancement(content);
-        if (enhancedContent) {
-          setContent(enhancedContent);
-        }
-    } catch (error) {
-        console.error("Failed to enhance note", error);
-        alert("AI 增强失败，请稍后再试。");
-    } finally {
-        setIsEnhancing(false);
+  const getColorClass = (c: CapsuleColor) => {
+    switch (c) {
+      case 'blue': return 'bg-blue-400 dark:bg-blue-500';
+      case 'purple': return 'bg-purple-400 dark:bg-purple-500';
+      case 'green': return 'bg-emerald-400 dark:bg-emerald-500';
+      case 'rose': return 'bg-rose-400 dark:bg-rose-500';
+      case 'amber': return 'bg-amber-400 dark:bg-amber-500';
+      case 'slate': return 'bg-slate-400 dark:bg-slate-500';
+      default: return 'bg-gray-400';
     }
   };
 
-  const getColorClass = (c: CapsuleColor, isSelected: boolean) => {
-    const base = 'w-7 h-7 rounded-full transition-all duration-200 ease-in-out flex-shrink-0';
-    const selected = isSelected ? 'ring-2 ring-offset-2 ring-offset-white dark:ring-offset-slate-900 ring-slate-400 dark:ring-slate-500 scale-110' : 'opacity-60 hover:opacity-100 scale-90 hover:scale-100';
-    switch (c) {
-      case 'blue': return `${base} ${selected} bg-blue-400 dark:bg-blue-500`;
-      case 'purple': return `${base} ${selected} bg-purple-400 dark:bg-purple-500`;
-      case 'green': return `${base} ${selected} bg-emerald-400 dark:bg-emerald-500`;
-      case 'rose': return `${base} ${selected} bg-rose-400 dark:bg-rose-500`;
-      case 'amber': return `${base} ${selected} bg-amber-400 dark:bg-amber-500`;
-      case 'slate': return `${base} ${selected} bg-slate-400 dark:bg-slate-500`;
-      default: return `${base} ${selected} bg-gray-400`;
-    }
-  };
+  // 生成背景渐变，基于选中的颜色
+  const getGradientBg = () => {
+      return "bg-slate-50 dark:bg-slate-950";
+  }
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-center items-end sm:items-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center sm:p-6 animate-in fade-in duration-200">
+      {/* 模糊背景 */}
       <div 
-        className="fixed inset-0 bg-slate-900/30 dark:bg-black/50 backdrop-blur-sm transition-opacity animate-in fade-in-0 duration-300" 
+        className="absolute inset-0 bg-slate-900/20 dark:bg-black/60 backdrop-blur-sm transition-opacity" 
         onClick={handleSave}
       />
+      
+      {/* 模态框主体 */}
       <div 
-        className="bg-white dark:bg-slate-900 w-full h-full sm:max-w-2xl sm:h-[85vh] sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden relative transition-all animate-in slide-in-from-bottom-full sm:zoom-in-95 duration-300"
+        className={`
+            w-full h-full sm:h-[90vh] sm:max-w-3xl sm:rounded-3xl 
+            flex flex-col relative overflow-hidden shadow-2xl 
+            bg-white dark:bg-slate-900
+            transition-all duration-300 ease-out transform scale-100
+        `}
       >
-        <header 
-          className="flex items-center justify-between px-4 sm:px-6 h-16 border-b border-slate-100 dark:border-slate-800 shrink-0"
-          style={{ paddingTop: 'var(--safe-area-inset-top)' }}
-        >
-          <div className="flex items-center gap-1">
-            <button onClick={onClose} className="p-2 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"><X size={24} /></button>
-            {note && (
-              <button onClick={() => { onDelete(note.id); onClose(); }} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-colors"><Trash2 size={20} /></button>
-            )}
-          </div>
-          <div className="flex items-center gap-3">
-             <div className="relative">
-                <Folder size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 pointer-events-none" />
-                <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} className="pl-9 pr-4 py-1.5 bg-slate-100 dark:bg-slate-800 rounded-lg text-sm text-slate-700 dark:text-slate-300 border-none outline-none appearance-none cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
-                    <option value="">无分类</option>
-                    {categories.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
-                </select>
-             </div>
-             <button onClick={handleSave} className="flex items-center gap-1.5 bg-slate-800 dark:bg-slate-100 text-white dark:text-slate-900 px-4 py-2 rounded-full hover:bg-slate-700 dark:hover:bg-slate-200 transition-all active:scale-95 font-medium text-sm"><Check size={16} /> 完成</button>
-          </div>
-        </header>
+        {/* 顶部工具栏 */}
+        <div className="flex items-center justify-between px-6 py-5 z-10 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md sticky top-0">
+          <button 
+              onClick={handleSave}
+              className="p-2 -ml-2 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            >
+              <X size={24} />
+          </button>
 
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 space-y-4">
-          <input
-            type="text"
-            placeholder="胶囊标题..."
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="w-full text-2xl md:text-3xl font-bold bg-transparent border-none outline-none placeholder:text-slate-300 dark:placeholder:text-slate-600 text-slate-800 dark:text-slate-100"
-          />
-          <textarea
-            ref={contentRef}
-            placeholder="捕捉你的灵感..."
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            className="w-full h-full min-h-[50vh] resize-none text-lg leading-relaxed bg-transparent border-none outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500 text-slate-700 dark:text-slate-300 font-medium pb-20"
-            spellCheck={false}
-          />
+          <div className="flex items-center gap-3">
+             {/* 颜色选择器 */}
+             <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 rounded-full p-1 mr-2">
+                {COLORS.map(c => (
+                <button
+                    key={c}
+                    onClick={() => setSelectedColor(c)}
+                    className={`
+                        w-5 h-5 rounded-full transition-all duration-300
+                        ${getColorClass(c)} 
+                        ${selectedColor === c ? 'scale-125 ring-2 ring-offset-1 ring-offset-white dark:ring-offset-slate-800 ring-slate-300 dark:ring-slate-500' : 'opacity-40 hover:opacity-80 scale-90'}
+                    `}
+                />
+                ))}
+             </div>
+
+            {note && (
+              <button 
+                onClick={() => { onDelete(note.id); onClose(); }}
+                className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-colors"
+                title="删除"
+              >
+                <Trash2 size={20} />
+              </button>
+            )}
+            
+            <button 
+                onClick={handleSave}
+                className="bg-slate-900 dark:bg-indigo-600 text-white px-5 py-2 rounded-full text-sm font-bold shadow-lg shadow-indigo-500/20 active:scale-95 transition-all flex items-center gap-2"
+            >
+                保存
+            </button>
+          </div>
         </div>
 
-        <footer 
-            className="px-4 py-3 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-4"
-            style={{ paddingBottom: 'calc(0.75rem + var(--safe-area-inset-bottom))' }}
-        >
-          <div className="flex items-center gap-4">
-            {COLORS.map(c => (
-              <button key={c} onClick={() => setSelectedColor(c)} className={getColorClass(c, selectedColor === c)} />
-            ))}
+        {/* 编辑区域 */}
+        <div className="flex-1 overflow-y-auto px-6 md:px-12 py-4 no-scrollbar">
+          <div className="max-w-3xl mx-auto space-y-6">
+            
+            {/* Meta Info Line */}
+            <div className="flex items-center gap-4 text-sm text-slate-400 dark:text-slate-500 font-medium">
+                <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800/50 px-3 py-1.5 rounded-lg transition-colors hover:bg-slate-100 dark:hover:bg-slate-800">
+                    <Folder size={14} />
+                    <select 
+                        value={categoryId}
+                        onChange={(e) => setCategoryId(e.target.value)}
+                        className="bg-transparent border-none outline-none appearance-none cursor-pointer pr-4 text-slate-600 dark:text-slate-300"
+                    >
+                        <option value="">无分类</option>
+                        {categories.map(cat => (
+                            <option key={cat.id} value={cat.id}>{cat.name}</option>
+                        ))}
+                    </select>
+                </div>
+                <div className="flex items-center gap-1.5 opacity-60">
+                    <Calendar size={14} />
+                    <span>{new Date(note?.updatedAt || Date.now()).toLocaleDateString()}</span>
+                </div>
+            </div>
+
+            <input
+                type="text"
+                placeholder="无标题"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                className="w-full text-4xl font-extrabold tracking-tight bg-transparent border-none outline-none placeholder:text-slate-200 dark:placeholder:text-slate-700 text-slate-900 dark:text-white"
+            />
+            
+            <textarea
+                ref={contentRef}
+                placeholder="开始书写你的想法..."
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                className="w-full min-h-[50vh] resize-none text-lg leading-loose bg-transparent border-none outline-none placeholder:text-slate-300 dark:placeholder:text-slate-700 text-slate-700 dark:text-slate-200 font-normal pb-32"
+                spellCheck={false}
+            />
           </div>
-          <button 
-            onClick={handleEnhanceNote} 
-            disabled={isEnhancing || !content.trim()}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isEnhancing ? (
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-slate-500"></div>
-            ) : (
-              <BrainCircuit size={16} />
-            )}
-            <span className="whitespace-nowrap">{isEnhancing ? '增强中...' : 'AI 增强'}</span>
-          </button>
-        </footer>
+        </div>
       </div>
     </div>
   );
