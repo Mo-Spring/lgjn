@@ -191,23 +191,24 @@ export const EditorModal: React.FC<EditorModalProps> = ({ note, isOpen, onClose,
         </div>
 
         {/* Toolbar */}
-        <div className="flex items-center justify-between px-5 pt-5 pb-4 min-h-[64px] bg-transparent z-10">
+        <div className="relative flex items-center justify-between px-5 pt-5 pb-4 min-h-[64px] bg-transparent z-10">
            <button 
               onClick={() => triggerClose()}
-              className="w-10 h-10 rounded-full flex items-center justify-center bg-transparent hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-slate-500 active:scale-90"
+              className="w-10 h-10 rounded-full flex items-center justify-center bg-transparent hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-slate-500 active:scale-90 relative z-20"
             >
               <X size={24} />
           </button>
 
-          <div className="flex items-center gap-2 pt-1">
-             <span className="text-xs font-bold text-slate-400 dark:text-slate-600 uppercase tracking-widest">
+          {/* Centered Title */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none pt-1">
+             <span className="text-lg font-bold text-slate-800 dark:text-slate-100 tracking-wide">
                 {note ? '编辑中' : '新灵感'}
              </span>
           </div>
 
           <button 
                 onClick={handleSave}
-                className="px-6 py-2.5 bg-slate-900 dark:bg-white text-white dark:text-black rounded-full font-bold text-[15px] shadow-xl shadow-slate-900/10 active:scale-95 transition-all"
+                className="px-6 py-2.5 bg-slate-900 dark:bg-white text-white dark:text-black rounded-full font-bold text-[15px] shadow-xl shadow-slate-900/10 active:scale-95 transition-all relative z-20"
             >
                 完成
           </button>
@@ -223,7 +224,7 @@ export const EditorModal: React.FC<EditorModalProps> = ({ note, isOpen, onClose,
                     placeholder="标题"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
-                    className="w-full text-[32px] font-bold bg-transparent border-none outline-none placeholder:text-slate-300 dark:placeholder:text-slate-700 text-slate-900 dark:text-white leading-tight mb-6"
+                    className="w-full text-left text-[32px] font-bold bg-transparent border-none outline-none placeholder:text-slate-300 dark:placeholder:text-slate-700 text-slate-900 dark:text-white leading-tight mb-6"
                 />
                 
                 {/* Content */}
@@ -232,15 +233,15 @@ export const EditorModal: React.FC<EditorModalProps> = ({ note, isOpen, onClose,
                     placeholder="捕捉灵感..."
                     value={content}
                     onChange={(e) => setContent(e.target.value)}
-                    className="w-full flex-1 resize-none text-[18px] leading-relaxed bg-transparent border-none outline-none placeholder:text-slate-300 dark:placeholder:text-slate-700 text-slate-700 dark:text-slate-300 font-normal mb-8"
+                    className="w-full flex-1 resize-none text-left text-[18px] leading-relaxed bg-transparent border-none outline-none placeholder:text-slate-300 dark:placeholder:text-slate-700 text-slate-700 dark:text-slate-300 font-normal mb-8"
                     spellCheck={false}
                 />
 
                 {/* --- Bottom Floating Panel for Properties --- */}
                 <div className="space-y-4 pb-8 sticky bottom-0 bg-gradient-to-t from-[#FAFAFA] via-[#FAFAFA] to-transparent dark:from-[#121212] dark:via-[#121212] pt-12">
                     
-                    {/* Color Picker - Horizontal Scroll */}
-                    <div className="flex items-center gap-4 overflow-x-auto no-scrollbar py-3 px-1">
+                    {/* Color Picker - Centered & Horizontal Scroll */}
+                    <div className="flex items-center justify-center gap-4 overflow-x-auto no-scrollbar py-3 px-1">
                         {COLORS.map(c => (
                             <button
                                 key={c}
@@ -263,12 +264,12 @@ export const EditorModal: React.FC<EditorModalProps> = ({ note, isOpen, onClose,
                                 onClick={() => setIsCategoryOpen(!isCategoryOpen)}
                                 className="w-full flex items-center justify-between p-4 bg-white dark:bg-[#1E1E20] rounded-2xl shadow-sm border border-slate-100 dark:border-white/5 active:scale-[0.99] transition-all hover:border-slate-200 dark:hover:border-white/10"
                             >
-                                <div className="flex items-center gap-3 text-slate-600 dark:text-slate-300">
-                                    <div className="w-8 h-8 rounded-full bg-slate-50 dark:bg-white/10 flex items-center justify-center text-slate-400 dark:text-slate-300">
-                                        <Folder size={16} strokeWidth={2.5} />
+                                <div className="flex items-center gap-2.5">
+                                    <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-white/10 flex items-center justify-center text-slate-500 dark:text-slate-300">
+                                        <Folder size={15} />
                                     </div>
-                                    <span className="font-semibold text-[15px]">
-                                        {categories.find(c => c.id === categoryId)?.name || "未分类"}
+                                    <span className={`text-[15px] font-medium ${categoryId ? 'text-slate-900 dark:text-white' : 'text-slate-400'}`}>
+                                        {categoryId ? categories.find(c => c.id === categoryId)?.name || '未分类' : '选择分类'}
                                     </span>
                                 </div>
                                 <ChevronDown size={18} className={`text-slate-400 transition-transform duration-300 ${isCategoryOpen ? 'rotate-180' : ''}`} />
@@ -276,45 +277,38 @@ export const EditorModal: React.FC<EditorModalProps> = ({ note, isOpen, onClose,
 
                             {/* Dropdown Menu */}
                             {isCategoryOpen && (
-                                <div className="absolute bottom-full left-0 right-0 mb-3 bg-white/95 dark:bg-[#2C2C2E]/95 backdrop-blur-xl rounded-2xl shadow-[0_20px_40px_rgba(0,0,0,0.2)] border border-slate-100 dark:border-white/5 overflow-hidden z-20 animate-dropdown origin-bottom p-2">
+                                <div className="absolute bottom-full mb-2 left-0 w-full bg-white dark:bg-[#2C2C2E] rounded-2xl shadow-xl border border-black/5 dark:border-white/10 overflow-hidden animate-dropdown origin-bottom z-30 max-h-[240px] overflow-y-auto">
                                     <button 
                                         onClick={() => { setCategoryId(''); setIsCategoryOpen(false); }}
-                                        className={`w-full text-left px-4 py-3.5 rounded-xl text-[15px] font-medium transition-colors flex items-center justify-between ${categoryId === '' ? 'bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5'}`}
+                                        className="w-full text-left px-4 py-3.5 text-[15px] font-medium text-slate-500 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors border-b border-slate-50 dark:border-white/5"
                                     >
-                                        <span>未分类</span>
-                                        {categoryId === '' && <Check size={16} />}
+                                        无分类
                                     </button>
                                     {categories.map(cat => (
                                         <button 
                                             key={cat.id}
                                             onClick={() => { setCategoryId(cat.id); setIsCategoryOpen(false); }}
-                                            className={`w-full text-left px-4 py-3.5 rounded-xl text-[15px] font-medium transition-colors flex items-center justify-between ${categoryId === cat.id ? 'bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5'}`}
+                                            className={`w-full text-left px-4 py-3.5 text-[15px] font-medium transition-colors hover:bg-slate-50 dark:hover:bg-white/5 flex items-center justify-between ${categoryId === cat.id ? 'text-slate-900 dark:text-white bg-slate-50 dark:bg-white/5' : 'text-slate-600 dark:text-slate-300'}`}
                                         >
-                                            <span>{cat.name}</span>
-                                            {categoryId === cat.id && <Check size={16} />}
+                                            {cat.name}
+                                            {categoryId === cat.id && <Check size={16} className="text-slate-900 dark:text-white" />}
                                         </button>
                                     ))}
+                                    {categories.length === 0 && (
+                                        <div className="px-4 py-8 text-center text-slate-400 text-sm">暂无分类</div>
+                                    )}
                                 </div>
                             )}
                         </div>
 
-                        {/* Date Display */}
-                        <div className="flex-shrink-0 p-4 bg-white dark:bg-[#1E1E20] rounded-2xl shadow-sm border border-slate-100 dark:border-white/5 flex items-center gap-2 text-slate-400">
+                        {/* Date Info (Read Only) */}
+                        <div className="h-[64px] px-5 bg-white dark:bg-[#1E1E20] rounded-2xl shadow-sm border border-slate-100 dark:border-white/5 flex items-center justify-center gap-2 text-slate-400 dark:text-slate-500">
                              <Calendar size={18} />
-                             <span className="text-sm font-bold uppercase tracking-wider">
-                                {new Date().getDate()}日
+                             <span className="text-sm font-medium">
+                                {new Date().toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' })}
                              </span>
                         </div>
                     </div>
-                    
-                    {note && (
-                        <button 
-                            onClick={() => { onDelete(note.id); }}
-                            className="w-full mt-2 py-4 flex items-center justify-center gap-2 text-red-500 bg-white dark:bg-[#1E1E20] border border-transparent hover:border-red-100 dark:hover:border-red-900/30 rounded-2xl transition-all font-semibold text-[15px] active:scale-[0.98] shadow-sm"
-                        >
-                            <Trash2 size={18} /> 删除此胶囊
-                        </button>
-                    )}
                 </div>
             </div>
         </div>
