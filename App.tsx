@@ -48,8 +48,6 @@ const App: React.FC = () => {
   const [currentEditingNote, setCurrentEditingNote] = useState<Note | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   
-  const [contextMenuNote, setContextMenuNote] = useState<Note | null>(null);
-
   // Dialog States
   const [inputDialog, setInputDialog] = useState({ isOpen: false, title: '', placeholder: '', onConfirm: (_val: string) => {} });
   const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, title: '', message: '', isDangerous: false, onConfirm: () => {} });
@@ -114,7 +112,6 @@ const App: React.FC = () => {
       const setupBackListener = async () => {
           backListener = await CapacitorApp.addListener('backButton', () => {
               // 1. Editor Modal (Highest Priority)
-              // Handled by its own listener in EditorModal.tsx, but we check here to prevent fallthrough
               if (isEditorOpen) {
                   return;
               }
@@ -135,25 +132,19 @@ const App: React.FC = () => {
                   return;
               }
 
-              // 4. Context Menu
-              if (contextMenuNote) {
-                  setContextMenuNote(null);
-                  return;
-              }
-
-              // 5. Selection Mode
+              // 4. Selection Mode
               if (isSelectionMode) {
                   setIsSelectionMode(false);
                   return;
               }
 
-              // 6. Search
+              // 5. Search
               if (isSearchOpen) {
                   setIsSearchOpen(false);
                   return;
               }
 
-              // 7. Default: Exit App (Minimize to Home)
+              // 6. Default: Exit App (Minimize to Home)
               CapacitorApp.exitApp();
           });
       };
@@ -168,7 +159,6 @@ const App: React.FC = () => {
       inputDialog.isOpen, 
       confirmDialog.isOpen, 
       isSettingsOpen, 
-      contextMenuNote, 
       isSelectionMode, 
       isSearchOpen
   ]);
@@ -191,10 +181,25 @@ const App: React.FC = () => {
     setIsEditorOpen(true);
   };
 
+  // Trigger delete confirmation dialog
+  const requestDeleteNote = (id: string) => {
+      setConfirmDialog({
+          isOpen: true,
+          title: '删除胶囊',
+          message: '确定要删除这条灵感吗？此操作无法撤销。',
+          isDangerous: true,
+          onConfirm: () => {
+              executeDeleteNote(id);
+              if (isEditorOpen) setIsEditorOpen(false);
+          }
+      });
+  };
+
   const handleLongPressNote = (note: Note) => {
     if (isSelectionMode) return;
     if (window.navigator && window.navigator.vibrate) window.navigator.vibrate(50);
-    setContextMenuNote(note);
+    // 直接调用删除确认，不再显示上下文菜单
+    requestDeleteNote(note.id);
   };
 
   const handleSaveNote = async (note: Note) => {
@@ -224,20 +229,6 @@ const App: React.FC = () => {
     } catch (error: any) {
         console.error("Delete error:", error);
     }
-  };
-
-  // Trigger delete confirmation dialog
-  const requestDeleteNote = (id: string) => {
-      setConfirmDialog({
-          isOpen: true,
-          title: '删除胶囊',
-          message: '确定要删除这条灵感吗？此操作无法撤销。',
-          isDangerous: true,
-          onConfirm: () => {
-              executeDeleteNote(id);
-              if (isEditorOpen) setIsEditorOpen(false);
-          }
-      });
   };
 
   const handleBatchDelete = async () => {
@@ -520,59 +511,6 @@ const App: React.FC = () => {
          )}
          </div>
       </div>
-
-      {/* Context Menu */}
-      {contextMenuNote && (
-        <>
-            <div 
-                className="fixed inset-0 z-50 bg-black/20 dark:bg-black/60 backdrop-blur-[2px] transition-opacity" 
-                onClick={() => setContextMenuNote(null)}
-            />
-            <div className="fixed inset-x-4 bottom-8 z-50 animate-slide-up pb-safe">
-                <div className="bg-white/85 dark:bg-[#1C1C1E]/85 backdrop-blur-2xl rounded-[20px] overflow-hidden shadow-2xl border border-white/20 dark:border-white/5">
-                    <div className="p-4 border-b border-black/5 dark:border-white/5 text-center">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest truncate block px-8">
-                            {contextMenuNote.title || "无标题"}
-                        </span>
-                    </div>
-                    <button 
-                        onClick={() => {
-                            setContextMenuNote(null);
-                            handleEditNote(contextMenuNote);
-                        }}
-                        className="w-full py-4 text-[16px] font-medium text-slate-900 dark:text-white active:bg-black/5 dark:active:bg-white/10 border-b border-black/5 dark:border-white/5"
-                    >
-                        编辑内容
-                    </button>
-                    <button 
-                        onClick={() => {
-                            setContextMenuNote(null);
-                            setIsSelectionMode(true);
-                            handleToggleSelectNote(contextMenuNote.id);
-                        }}
-                        className="w-full py-4 text-[16px] font-medium text-slate-900 dark:text-white active:bg-black/5 dark:active:bg-white/10 border-b border-black/5 dark:border-white/5"
-                    >
-                        多选模式
-                    </button>
-                    <button 
-                        onClick={() => {
-                            setContextMenuNote(null);
-                            requestDeleteNote(contextMenuNote.id);
-                        }}
-                        className="w-full py-4 text-[16px] font-medium text-red-500 active:bg-black/5 dark:active:bg-white/10"
-                    >
-                        删除
-                    </button>
-                </div>
-                <button 
-                    onClick={() => setContextMenuNote(null)}
-                    className="mt-3 w-full py-4 bg-white/90 dark:bg-[#2C2C2E]/90 backdrop-blur-xl rounded-[20px] text-[16px] font-bold text-slate-900 dark:text-white shadow-xl active:scale-[0.98] transition-transform"
-                >
-                    取消
-                </button>
-            </div>
-        </>
-      )}
 
       {/* Editor Modal */}
       <EditorModal 
