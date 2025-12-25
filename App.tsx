@@ -6,6 +6,8 @@ import { CapsuleCard } from './components/CapsuleCard';
 import { EditorModal } from './components/EditorModal';
 import { SettingsModal } from './components/SettingsModal';
 import { storage } from './services/storageService';
+import { StatusBar, Style } from '@capacitor/status-bar';
+import { Capacitor } from '@capacitor/core';
 
 const THEME_STORAGE_KEY = 'inspiration_capsules_theme';
 const VIEW_MODE_STORAGE_KEY = 'inspiration_capsules_view_mode';
@@ -71,6 +73,21 @@ const App: React.FC = () => {
     root.classList.remove('light', 'dark');
     root.classList.add(theme);
     localStorage.setItem(THEME_STORAGE_KEY, theme);
+
+    // 设置沉浸式状态栏
+    if (Capacitor.isNativePlatform()) {
+        const setStatusBarStyle = async () => {
+            try {
+                // 开启 Overlay 模式（内容延伸到状态栏下方）
+                await StatusBar.setOverlaysWebView({ overlay: true });
+                // 根据主题设置文字颜色
+                await StatusBar.setStyle({ style: theme === 'dark' ? Style.Dark : Style.Light });
+            } catch (e) {
+                console.warn("Status bar not supported");
+            }
+        };
+        setStatusBarStyle();
+    }
   }, [theme]);
 
   useEffect(() => {
