@@ -2,6 +2,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Note, CapsuleColor, Category } from '../types';
 import { Trash2, Folder, Calendar, ChevronDown, Check, X } from 'lucide-react';
+import { Capacitor } from '@capacitor/core';
+import { App as CapacitorApp } from '@capacitor/app';
 
 interface EditorModalProps {
   note: Note | null;
@@ -25,21 +27,11 @@ export const EditorModal: React.FC<EditorModalProps> = ({ note, isOpen, onClose,
   
   const contentRef = useRef<HTMLTextAreaElement>(null);
   const categoryRef = useRef<HTMLDivElement>(null);
+  const historyPushedRef = useRef(false);
 
-  // 初始化与返回键处理 (History API)
+  // 初始化数据
   useEffect(() => {
     if (isOpen) {
-      setIsClosing(false);
-      
-      // Push history state so back button closes modal
-      window.history.pushState({ modal: 'editor' }, '', window.location.href);
-
-      const handlePopState = () => {
-        handleClose(false); // Close without going back again
-      };
-
-      window.addEventListener('popstate', handlePopState);
-
       if (note) {
         setTitle(note.title);
         setContent(note.content);
@@ -53,16 +45,52 @@ export const EditorModal: React.FC<EditorModalProps> = ({ note, isOpen, onClose,
         // Focus on Content for new notes
         setTimeout(() => {
             contentRef.current?.focus();
-        }, 400); // 稍微延迟等待动画开始
+        }, 400);
       }
+    }
+  }, [isOpen, note]);
+
+  // 返回键处理 (History API & Native Hardware Button)
+  useEffect(() => {
+    if (isOpen) {
+      setIsClosing(false);
+      
+      let backButtonListener: any;
+
+      const setupListener = async () => {
+          if (Capacitor.isNativePlatform()) {
+              // Native: 监听硬件返回键，拦截并关闭 Modal
+              backButtonListener = await CapacitorApp.addListener('backButton', () => {
+                  handleClose(false); 
+              });
+          } else {
+              // Web: 使用 History API
+              window.history.pushState({ modal: 'editor' }, '', window.location.href);
+              historyPushedRef.current = true;
+              window.addEventListener('popstate', handlePopState);
+          }
+      };
+
+      setupListener();
+
+      const handlePopState = () => {
+        // 浏览器后退触发，historyPushed 已经被消费了
+        historyPushedRef.current = false;
+        handleClose(false);
+      };
+
       document.body.style.overflow = 'hidden';
 
       return () => {
+        if (backButtonListener) {
+            backButtonListener.remove();
+        }
         window.removeEventListener('popstate', handlePopState);
         document.body.style.overflow = '';
+        historyPushedRef.current = false;
       };
     }
-  }, [isOpen, note]);
+  }, [isOpen]);
 
   // 点击外部关闭分类下拉
   useEffect(() => {
@@ -81,19 +109,22 @@ export const EditorModal: React.FC<EditorModalProps> = ({ note, isOpen, onClose,
 
   const handleClose = (shouldGoBack: boolean = true) => {
     setIsClosing(true);
-    if (shouldGoBack) {
-        // Remove the history state we pushed
+    
+    // 只有当我们确实 push 过 history，且是主动关闭（点击按钮）时，才手动 back
+    if (shouldGoBack && historyPushedRef.current) {
         try {
             window.history.back(); 
+            historyPushedRef.current = false;
         } catch (e) {
             // ignore
         }
     }
+    
     setTimeout(() => {
         onClose();
         setIsClosing(false);
         setIsCategoryOpen(false);
-    }, 300);
+    }, 400); // Wait for animation
   };
 
   const handleSave = () => {
@@ -116,12 +147,12 @@ export const EditorModal: React.FC<EditorModalProps> = ({ note, isOpen, onClose,
 
   const getBgColor = (c: CapsuleColor) => {
     switch (c) {
-      case 'blue': return 'bg-blue-500 shadow-blue-500/30';
-      case 'purple': return 'bg-purple-500 shadow-purple-500/30';
-      case 'green': return 'bg-emerald-500 shadow-emerald-500/30';
-      case 'rose': return 'bg-rose-500 shadow-rose-500/30';
-      case 'amber': return 'bg-amber-500 shadow-amber-500/30';
-      case 'slate': return 'bg-slate-500 shadow-slate-500/30';
+      case 'blue': return 'bg-blue-500 shadow-blue-500/40 ring-blue-500/20';
+      case 'purple': return 'bg-purple-500 shadow-purple-500/40 ring-purple-500/20';
+      case 'green': return 'bg-emerald-500 shadow-emerald-500/40 ring-emerald-500/20';
+      case 'rose': return 'bg-rose-500 shadow-rose-500/40 ring-rose-500/20';
+      case 'amber': return 'bg-amber-500 shadow-amber-500/40 ring-amber-500/20';
+      case 'slate': return 'bg-slate-500 shadow-slate-500/40 ring-slate-500/20';
       default: return 'bg-slate-500';
     }
   };
@@ -133,7 +164,7 @@ export const EditorModal: React.FC<EditorModalProps> = ({ note, isOpen, onClose,
       {/* Backdrop */}
       <div 
         className={`
-            absolute inset-0 bg-black/20 dark:bg-black/70 backdrop-blur-sm transition-opacity duration-300
+            absolute inset-0 bg-black/20 dark:bg-black/70 backdrop-blur-md transition-opacity duration-400 ease-out
             ${isOpen && !isClosing ? 'opacity-100' : 'opacity-0'}
         `}
         onClick={() => handleClose()}
@@ -144,36 +175,36 @@ export const EditorModal: React.FC<EditorModalProps> = ({ note, isOpen, onClose,
         className={`
             relative w-full sm:w-[600px] h-[80vh]
             bg-[#FAFAFA] dark:bg-[#121212] 
-            rounded-t-[28px] sm:rounded-[28px]
-            shadow-[0_-10px_40px_rgba(0,0,0,0.15)] dark:shadow-[0_-10px_40px_rgba(0,0,0,0.5)]
-            flex flex-col overflow-hidden
-            transform transition-transform duration-300 cubic-bezier(0.2, 0.9, 0.3, 1)
-            ${isOpen && !isClosing ? 'translate-y-0 scale-100' : 'translate-y-full sm:translate-y-10 sm:scale-95 sm:opacity-0'}
+            rounded-t-[32px] sm:rounded-[32px]
+            shadow-[0_-10px_60px_rgba(0,0,0,0.15)] dark:shadow-[0_-10px_60px_rgba(0,0,0,0.6)]
+            flex flex-col overflow-hidden ring-1 ring-black/5 dark:ring-white/10
+            transform transition-all duration-500 cubic-bezier(0.34, 1.56, 0.64, 1)
+            ${isOpen && !isClosing ? 'translate-y-0 scale-100 opacity-100' : 'translate-y-[105%] scale-95 opacity-50'}
         `}
       >
         {/* Drag Handle Indicator */}
-        <div className="absolute top-0 left-0 right-0 h-6 flex justify-center pt-2.5 z-20 pointer-events-none">
-            <div className="w-10 h-1 rounded-full bg-slate-300 dark:bg-slate-700 opacity-50"></div>
+        <div className="absolute top-0 left-0 right-0 h-7 flex justify-center pt-3 z-20 pointer-events-none">
+            <div className="w-12 h-1.5 rounded-full bg-slate-200 dark:bg-slate-700/50"></div>
         </div>
 
         {/* Toolbar */}
-        <div className="flex items-center justify-between px-5 pt-4 pb-4 min-h-[60px] bg-transparent z-10">
+        <div className="flex items-center justify-between px-5 pt-5 pb-4 min-h-[64px] bg-transparent z-10">
            <button 
               onClick={() => handleClose()}
-              className="w-10 h-10 rounded-full flex items-center justify-center bg-transparent hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-slate-500"
+              className="w-10 h-10 rounded-full flex items-center justify-center bg-transparent hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-slate-500 active:scale-90"
             >
-              <X size={22} />
+              <X size={24} />
           </button>
 
           <div className="flex items-center gap-2 pt-1">
-             <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
-                {note ? 'EDITING' : 'NEW IDEA'}
+             <span className="text-xs font-bold text-slate-400 dark:text-slate-600 uppercase tracking-widest">
+                {note ? '编辑中' : '新灵感'}
              </span>
           </div>
 
           <button 
                 onClick={handleSave}
-                className="px-5 py-2 bg-slate-900 dark:bg-white text-white dark:text-black rounded-full font-bold text-sm shadow-lg shadow-slate-900/10 active:scale-95 transition-all"
+                className="px-6 py-2.5 bg-slate-900 dark:bg-white text-white dark:text-black rounded-full font-bold text-[15px] shadow-xl shadow-slate-900/10 active:scale-95 transition-all"
             >
                 完成
           </button>
@@ -181,7 +212,7 @@ export const EditorModal: React.FC<EditorModalProps> = ({ note, isOpen, onClose,
 
         {/* Editor Area */}
         <div className="flex-1 overflow-y-auto no-scrollbar relative flex flex-col">
-            <div className="max-w-xl mx-auto px-6 pt-2 pb-safe w-full flex-1 flex flex-col">
+            <div className="max-w-xl mx-auto px-6 pt-4 pb-safe w-full flex-1 flex flex-col">
                 
                 {/* Title */}
                 <input
@@ -189,7 +220,7 @@ export const EditorModal: React.FC<EditorModalProps> = ({ note, isOpen, onClose,
                     placeholder="标题"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
-                    className="w-full text-3xl font-bold bg-transparent border-none outline-none placeholder:text-slate-300 dark:placeholder:text-slate-700 text-slate-900 dark:text-white leading-tight mb-6"
+                    className="w-full text-[32px] font-bold bg-transparent border-none outline-none placeholder:text-slate-300 dark:placeholder:text-slate-700 text-slate-900 dark:text-white leading-tight mb-6"
                 />
                 
                 {/* Content */}
@@ -198,26 +229,26 @@ export const EditorModal: React.FC<EditorModalProps> = ({ note, isOpen, onClose,
                     placeholder="捕捉灵感..."
                     value={content}
                     onChange={(e) => setContent(e.target.value)}
-                    className="w-full flex-1 resize-none text-[17px] leading-relaxed bg-transparent border-none outline-none placeholder:text-slate-300 dark:placeholder:text-slate-700 text-slate-700 dark:text-slate-300 font-normal mb-8"
+                    className="w-full flex-1 resize-none text-[18px] leading-relaxed bg-transparent border-none outline-none placeholder:text-slate-300 dark:placeholder:text-slate-700 text-slate-700 dark:text-slate-300 font-normal mb-8"
                     spellCheck={false}
                 />
 
                 {/* --- Bottom Floating Panel for Properties --- */}
-                <div className="space-y-4 pb-8 sticky bottom-0 bg-gradient-to-t from-[#FAFAFA] via-[#FAFAFA] to-transparent dark:from-[#121212] dark:via-[#121212] pt-10">
+                <div className="space-y-4 pb-8 sticky bottom-0 bg-gradient-to-t from-[#FAFAFA] via-[#FAFAFA] to-transparent dark:from-[#121212] dark:via-[#121212] pt-12">
                     
                     {/* Color Picker - Horizontal Scroll */}
-                    <div className="flex items-center gap-4 overflow-x-auto no-scrollbar py-2 px-1">
+                    <div className="flex items-center gap-4 overflow-x-auto no-scrollbar py-3 px-1">
                         {COLORS.map(c => (
                             <button
                                 key={c}
                                 onClick={() => setSelectedColor(c)}
                                 className={`
-                                    w-9 h-9 rounded-full transition-all flex items-center justify-center shadow-sm flex-shrink-0
+                                    w-10 h-10 rounded-full transition-all flex items-center justify-center flex-shrink-0
                                     ${getBgColor(c)} 
-                                    ${selectedColor === c ? 'scale-110 ring-2 ring-offset-2 ring-offset-[#FAFAFA] dark:ring-offset-[#121212] ring-slate-300 dark:ring-slate-600' : 'opacity-40 scale-90'}
+                                    ${selectedColor === c ? 'scale-110 ring-4 ring-offset-2 ring-offset-[#FAFAFA] dark:ring-offset-[#121212]' : 'opacity-60 hover:opacity-100 scale-90'}
                                 `}
                             >
-                                {selectedColor === c && <Check size={14} className="text-white drop-shadow-md" strokeWidth={3} />}
+                                {selectedColor === c && <Check size={16} className="text-white drop-shadow-md" strokeWidth={3} />}
                             </button>
                         ))}
                     </div>
@@ -227,37 +258,37 @@ export const EditorModal: React.FC<EditorModalProps> = ({ note, isOpen, onClose,
                         <div className="relative flex-1" ref={categoryRef}>
                             <button 
                                 onClick={() => setIsCategoryOpen(!isCategoryOpen)}
-                                className="w-full flex items-center justify-between p-3.5 bg-white dark:bg-[#1E1E20] rounded-xl shadow-sm border border-slate-100 dark:border-white/5 active:scale-[0.99] transition-all"
+                                className="w-full flex items-center justify-between p-4 bg-white dark:bg-[#1E1E20] rounded-2xl shadow-sm border border-slate-100 dark:border-white/5 active:scale-[0.99] transition-all hover:border-slate-200 dark:hover:border-white/10"
                             >
                                 <div className="flex items-center gap-3 text-slate-600 dark:text-slate-300">
-                                    <div className="w-7 h-7 rounded-full bg-slate-50 dark:bg-white/10 flex items-center justify-center">
-                                        <Folder size={14} />
+                                    <div className="w-8 h-8 rounded-full bg-slate-50 dark:bg-white/10 flex items-center justify-center text-slate-400 dark:text-slate-300">
+                                        <Folder size={16} strokeWidth={2.5} />
                                     </div>
-                                    <span className="font-medium text-[14px]">
+                                    <span className="font-semibold text-[15px]">
                                         {categories.find(c => c.id === categoryId)?.name || "未分类"}
                                     </span>
                                 </div>
-                                <ChevronDown size={16} className={`text-slate-400 transition-transform duration-300 ${isCategoryOpen ? 'rotate-180' : ''}`} />
+                                <ChevronDown size={18} className={`text-slate-400 transition-transform duration-300 ${isCategoryOpen ? 'rotate-180' : ''}`} />
                             </button>
 
                             {/* Dropdown Menu */}
                             {isCategoryOpen && (
-                                <div className="absolute bottom-full left-0 right-0 mb-2 bg-white/95 dark:bg-[#2C2C2E]/95 backdrop-blur-xl rounded-xl shadow-2xl border border-slate-100 dark:border-white/5 overflow-hidden z-20 animate-dropdown origin-bottom p-1.5">
+                                <div className="absolute bottom-full left-0 right-0 mb-3 bg-white/95 dark:bg-[#2C2C2E]/95 backdrop-blur-xl rounded-2xl shadow-[0_20px_40px_rgba(0,0,0,0.2)] border border-slate-100 dark:border-white/5 overflow-hidden z-20 animate-dropdown origin-bottom p-2">
                                     <button 
                                         onClick={() => { setCategoryId(''); setIsCategoryOpen(false); }}
-                                        className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-colors flex items-center justify-between ${categoryId === '' ? 'bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5'}`}
+                                        className={`w-full text-left px-4 py-3.5 rounded-xl text-[15px] font-medium transition-colors flex items-center justify-between ${categoryId === '' ? 'bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5'}`}
                                     >
                                         <span>未分类</span>
-                                        {categoryId === '' && <Check size={14} />}
+                                        {categoryId === '' && <Check size={16} />}
                                     </button>
                                     {categories.map(cat => (
                                         <button 
                                             key={cat.id}
                                             onClick={() => { setCategoryId(cat.id); setIsCategoryOpen(false); }}
-                                            className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-colors flex items-center justify-between ${categoryId === cat.id ? 'bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5'}`}
+                                            className={`w-full text-left px-4 py-3.5 rounded-xl text-[15px] font-medium transition-colors flex items-center justify-between ${categoryId === cat.id ? 'bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5'}`}
                                         >
                                             <span>{cat.name}</span>
-                                            {categoryId === cat.id && <Check size={14} />}
+                                            {categoryId === cat.id && <Check size={16} />}
                                         </button>
                                     ))}
                                 </div>
@@ -265,20 +296,20 @@ export const EditorModal: React.FC<EditorModalProps> = ({ note, isOpen, onClose,
                         </div>
 
                         {/* Date Display */}
-                        <div className="flex-shrink-0 p-3.5 bg-white dark:bg-[#1E1E20] rounded-xl shadow-sm border border-slate-100 dark:border-white/5 flex items-center gap-2 text-slate-400">
-                             <Calendar size={16} />
-                             <span className="text-xs font-bold uppercase tracking-wider">
-                                {new Date().getDate()}
+                        <div className="flex-shrink-0 p-4 bg-white dark:bg-[#1E1E20] rounded-2xl shadow-sm border border-slate-100 dark:border-white/5 flex items-center gap-2 text-slate-400">
+                             <Calendar size={18} />
+                             <span className="text-sm font-bold uppercase tracking-wider">
+                                {new Date().getDate()}日
                              </span>
                         </div>
                     </div>
                     
                     {note && (
                         <button 
-                            onClick={() => { onDelete(note.id); handleClose(); }}
-                            className="w-full mt-2 py-3.5 flex items-center justify-center gap-2 text-red-500 bg-white dark:bg-[#1E1E20] border border-transparent hover:border-red-100 dark:hover:border-red-900/30 rounded-xl transition-all font-medium text-sm active:scale-[0.98]"
+                            onClick={() => { onDelete(note.id); }}
+                            className="w-full mt-2 py-4 flex items-center justify-center gap-2 text-red-500 bg-white dark:bg-[#1E1E20] border border-transparent hover:border-red-100 dark:hover:border-red-900/30 rounded-2xl transition-all font-semibold text-[15px] active:scale-[0.98] shadow-sm"
                         >
-                            <Trash2 size={16} /> 删除此胶囊
+                            <Trash2 size={18} /> 删除此胶囊
                         </button>
                     )}
                 </div>
