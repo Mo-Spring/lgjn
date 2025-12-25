@@ -39,8 +39,9 @@
   }
 
   .mask-linear-fade {
-      mask-image: linear-gradient(to right, transparent, black 15px, black 85%, transparent);
-      -webkit-mask-image: linear-gradient(to right, transparent, black 15px, black 85%, transparent);
+      /* Remove left fade to prevent content blocking, keep right fade for scroll hint */
+      mask-image: linear-gradient(to right, black 0%, black 85%, transparent);
+      -webkit-mask-image: linear-gradient(to right, black 0%, black 85%, transparent);
   }
 }
 
