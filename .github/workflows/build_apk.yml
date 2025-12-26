@@ -1,3 +1,4 @@
+
 name: Build Android APK
 
 on:
@@ -38,9 +39,11 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Add Android Platform & Sync
+      - name: Add Android Platform & Generate Assets
         run: |
           npx cap add android || true
+          # 这一步非常关键：生成安卓图标
+          npx capacitor-assets generate --android --icon icon.svg
           npx cap sync
 
       - name: Build APK with Gradle
