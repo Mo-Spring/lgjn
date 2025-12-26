@@ -42,8 +42,17 @@ jobs:
       - name: Add Android Platform & Generate Assets
         run: |
           npx cap add android || true
-          # 这一步非常关键：生成安卓图标
-          npx capacitor-assets generate --android --icon icon.svg
+          
+          # 修复：创建工具预期的 assets 目录结构
+          mkdir -p assets
+          
+          # 将根目录的 icon.svg 复制为图标源和启动图源
+          cp icon.svg assets/icon.svg
+          cp icon.svg assets/splash.svg
+          
+          # 运行生成命令 (不带任何参数，它会自动读取 assets 目录)
+          npx capacitor-assets generate --android
+          
           npx cap sync
 
       - name: Build APK with Gradle
