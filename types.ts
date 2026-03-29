@@ -14,4 +14,5 @@ export interface Note {
   updatedAt: number;
   color: CapsuleColor;
   categoryId?: string;
+  deletedAt?: number; // 回收站：软删除时间戳
 }
