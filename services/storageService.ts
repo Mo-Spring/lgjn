@@ -114,6 +114,31 @@ class StorageService {
     });
   }
 
+  /** 批量软删除 — 单事务并行写入 */
+  async batchSoftDelete(ids: string[]): Promise<void> {
+    if (ids.length === 0) return;
+    await this.init();
+    if (!this.db) throw new Error("Database not initialized");
+    const now = Date.now();
+    return new Promise((resolve, reject) => {
+      const tx = this.db!.transaction(STORE_NOTES, 'readwrite');
+      const store = tx.objectStore(STORE_NOTES);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+      for (const id of ids) {
+        const getReq = store.get(id);
+        getReq.onsuccess = () => {
+          const note = getReq.result as Note | undefined;
+          if (note) {
+            note.deletedAt = now;
+            note.updatedAt = now;
+            store.put(note);
+          }
+        };
+      }
+    });
+  }
+
   /** 恢复：清除 deletedAt */
   async restoreNote(id: string): Promise<void> {
     const store = await this.getStore(STORE_NOTES, 'readwrite');
