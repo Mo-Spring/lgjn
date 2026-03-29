@@ -1,4 +1,3 @@
-
 import React, { useRef } from 'react';
 import { Note, CapsuleColor } from '../types';
 import { Check, Clock } from 'lucide-react';
@@ -6,7 +5,7 @@ import { Check, Clock } from 'lucide-react';
 interface CapsuleCardProps {
   note: Note;
   onClick: (note: Note) => void;
-  onLongPress: (note: Note) => void;
+  onLongPress: (note: Note, event?: React.MouseEvent | React.TouchEvent) => void;
   viewMode: 'grid' | 'list';
   isSelectionMode: boolean;
   isSelected: boolean;
@@ -46,10 +45,10 @@ export const CapsuleCard: React.FC<CapsuleCardProps> = ({
   
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const handleTouchStart = () => {
+  const handleTouchStart = (e: React.TouchEvent) => {
     if (isSelectionMode) return;
     timerRef.current = setTimeout(() => {
-        onLongPress(note);
+      onLongPress(note, e);
     }, 500);
   };
 
@@ -88,7 +87,7 @@ export const CapsuleCard: React.FC<CapsuleCardProps> = ({
             transition-all duration-500 cubic-bezier(0.34, 1.56, 0.64, 1)
             ${isSelectionMode && isSelected ? 'transform scale-[0.96] opacity-90' : 'hover:-translate-y-1 hover:shadow-lg'}
         `}
-        onContextMenu={(e) => { e.preventDefault(); onLongPress(note); }}
+        onContextMenu={(e) => { e.preventDefault(); onLongPress(note, e); }}
     >
         <div 
             onClick={handleClick}
