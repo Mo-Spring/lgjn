@@ -1,12 +1,11 @@
-
 {
   "name": "灵感胶囊",
   "short_name": "灵感胶囊",
   "start_url": "./",
   "id": "inspiration-capsule-app",
   "display": "standalone",
-  "background_color": "#0f172a",
-  "theme_color": "#0f172a",
+  "background_color": "#F5F3FF",
+  "theme_color": "#6366F1",
   "orientation": "portrait",
   "scope": "./",
   "icons": [
