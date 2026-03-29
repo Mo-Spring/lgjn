@@ -42,7 +42,6 @@ export const NoteActionMenu: React.FC<NoteActionMenuProps> = ({
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     };
-    // slight delay to avoid immediate close on the triggering click
     const timer = setTimeout(() => {
       document.addEventListener('mousedown', handleClick);
       document.addEventListener('keydown', handleKey);
@@ -68,16 +67,21 @@ export const NoteActionMenu: React.FC<NoteActionMenuProps> = ({
       <div className="absolute inset-0" onClick={onClose} />
       <div
         ref={menuRef}
-        className="absolute z-[71] min-w-[180px] py-1.5 bg-white/95 dark:bg-[#2C2C2E]/95 backdrop-blur-xl rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.15)] dark:shadow-[0_8px_40px_rgba(0,0,0,0.5)] border border-black/5 dark:border-white/10 animate-pop"
+        className="absolute z-[71] min-w-[180px] py-1.5
+          bg-white/95 dark:bg-[#1A1A1A]/95 backdrop-blur-2xl
+          rounded-2xl shadow-[0_12px_48px_rgba(0,0,0,0.15)] dark:shadow-[0_12px_48px_rgba(0,0,0,0.6)]
+          border border-black/[0.06] dark:border-white/[0.08] animate-pop overflow-hidden"
         style={{ left: pos.x, top: pos.y }}
       >
         {items.map((item, i) => (
           <button
             key={i}
             onClick={() => { item.action(); onClose(); }}
-            className={`w-full flex items-center gap-3 px-4 py-2.5 text-[14px] font-medium transition-colors hover:bg-black/5 dark:hover:bg-white/10 ${item.color || 'text-slate-700 dark:text-slate-200'}`}
+            className={`w-full flex items-center gap-3 px-4 py-2.5 text-[13px] font-medium
+              transition-colors hover:bg-black/[0.04] dark:hover:bg-white/[0.06]
+              ${item.color || 'text-slate-700 dark:text-slate-200'}`}
           >
-            <item.icon size={16} strokeWidth={2} />
+            <item.icon size={15} strokeWidth={2} />
             {item.label}
           </button>
         ))}
