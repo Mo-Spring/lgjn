@@ -1,5 +1,5 @@
 // ============================================================
-// hooks/useTheme.ts — 主题切换 + 持久化
+// hooks/useTheme.ts — 主题切换 + 持久化 + 状态栏同步
 // ============================================================
 
 import { useState, useEffect, useCallback } from 'react';
@@ -20,13 +20,25 @@ export function useTheme() {
     });
   }, []);
 
-  // 同步 <html> class
+  // 同步 <html> class + meta theme-color + body background
   useEffect(() => {
     const root = document.documentElement;
-    if (theme === 'dark') {
+    const body = document.body;
+    const isDark = theme === 'dark';
+
+    if (isDark) {
       root.classList.add('dark');
     } else {
       root.classList.remove('dark');
+    }
+
+    // 同步 body 背景色（防止闪烁）
+    body.style.backgroundColor = isDark ? '#1A1A1A' : '#F5F5F5';
+
+    // 同步 meta theme-color
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) {
+      meta.setAttribute('content', isDark ? '#1A1A1A' : '#F5F5F5');
     }
   }, [theme]);
 

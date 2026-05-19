@@ -4,8 +4,8 @@
 
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import {
-  Plus, Search, Settings, Trash2, X,
-  ArrowLeft, CheckSquare, MoreHorizontal,
+  Plus, Search, Trash2, X,
+  ArrowLeft, MoreHorizontal,
   LayoutGrid, List,
 } from 'lucide-react';
 
@@ -28,6 +28,27 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { EmptyState } from './components/EmptyState';
 import { ToastContainer } from './components/Toast';
 
+// Capacitor 插件（仅在原生环境生效）
+let AppPlugin: any = null;
+let StatusBarPlugin: any = null;
+let NavigationBarPlugin: any = null;
+
+async function loadCapacitorPlugins() {
+  try {
+    const appMod = await import('@capacitor/app');
+    AppPlugin = appMod.App;
+  } catch {}
+  try {
+    const sbMod = await import('@capacitor/status-bar');
+    StatusBarPlugin = sbMod.StatusBar;
+  } catch {}
+  try {
+    // NavigationBar 可能不存在，忽略
+    const nbMod = await import('@capacitor/navigation-bar' as any);
+    NavigationBarPlugin = nbMod.NavigationBar;
+  } catch {}
+}
+
 export default function App() {
   // ── Hooks ──
   const { theme, toggleTheme } = useTheme();
@@ -49,7 +70,95 @@ export default function App() {
   const [showSearch, setShowSearch] = useState(false);
   const [confirm, setConfirm] = useState({ open: false, title: '', message: '', onConfirm: () => {} });
 
+  // ── 初始化存储 ──
   useEffect(() => { initStorage(); }, []);
+
+  // ── 加载 Capacitor 插件 ──
+  useEffect(() => {
+    loadCapacitorPlugins();
+  }, []);
+
+  // ── 状态栏 + 导航栏颜色跟随主题 ──
+  useEffect(() => {
+    const applyBarColors = async () => {
+      const isDark = theme === 'dark';
+      const bgColor = isDark ? '#1A1A1A' : '#F5F5F5';
+
+      // 状态栏
+      if (StatusBarPlugin) {
+        try {
+          await StatusBarPlugin.setBackgroundColor({ color: bgColor });
+          await StatusBarPlugin.setStyle({ style: isDark ? 'DARK' : 'LIGHT' });
+          await StatusBarPlugin.setOverlaysWebView({ overlay: false });
+        } catch {}
+      }
+
+      // 导航栏（Android）
+      if (NavigationBarPlugin) {
+        try {
+          await NavigationBarPlugin.setColor({ color: bgColor });
+        } catch {}
+      }
+
+      // 同步 meta theme-color
+      const meta = document.querySelector('meta[name="theme-color"]');
+      if (meta) meta.setAttribute('content', bgColor);
+    };
+    applyBarColors();
+  }, [theme]);
+
+  // ── 系统返回手势处理 ──
+  useEffect(() => {
+    let listener: any = null;
+
+    const setupBackHandler = async () => {
+      if (!AppPlugin) return;
+      try {
+        listener = await AppPlugin.addListener('backButton', (e: any) => {
+          // 优先关闭弹窗/抽屉（后进先出）
+          if (confirm.open) {
+            setConfirm(d => ({ ...d, open: false }));
+            return;
+          }
+          if (menuNote) {
+            setMenuNote(null);
+            return;
+          }
+          if (showSettings) {
+            setShowSettings(false);
+            return;
+          }
+          if (showTrash) {
+            setShowTrash(false);
+            return;
+          }
+          if (isEditorOpen) {
+            closeEditor();
+            return;
+          }
+          if (showSearch) {
+            setShowSearch(false);
+            setSearchQuery('');
+            return;
+          }
+          if (sel.isSelectionMode) {
+            sel.exitSelectionMode();
+            return;
+          }
+          // 无弹窗时，交由系统处理（退出 app）
+          if (AppPlugin?.exitApp) {
+            AppPlugin.exitApp();
+          }
+        });
+      } catch {}
+    };
+
+    setupBackHandler();
+
+    return () => {
+      if (listener) listener.remove();
+    };
+  }, [confirm.open, menuNote, showSettings, showTrash, isEditorOpen, showSearch, sel.isSelectionMode]);
 
   // ── 筛选 ──
   const filtered = useMemo(() => {
@@ -75,11 +184,6 @@ export default function App() {
   const tapNote = useCallback((note: Note) => {
     sel.isSelectionMode ? sel.toggleSelection(note.id) : openEditor(note);
   }, [sel, openEditor]);
-
-  const longPressNote = useCallback((note: Note) => {
-    sel.enterSelectionMode(note.id);
-    addToast('已进入多选模式', 'info');
-  }, [sel, addToast]);
 
   const openMenu = useCallback((note: Note, pos: { x: number; y: number }) => {
     setMenuNote(note);
@@ -125,10 +229,10 @@ export default function App() {
       <div className="min-h-screen" style={{ background: 'var(--mi-bg)', color: 'var(--mi-text-primary)' }}>
 
         {/* ── Header — 小米笔记风格 ── */}
-        <header className="sticky top-0 z-30 pt-safe" style={{ background: 'var(--mi-bg)' }}>
+        <header className="sticky top-0 z-30" style={{ background: 'var(--mi-bg)' }}>
           {showSearch ? (
             /* 搜索模式 */
-            <div className="px-4 pb-3 pt-3 animate-mi-page-in">
+            <div className="px-4 pb-3 pt-3 animate-mi-page-in" style={{ paddingTop: 'calc(12px + env(safe-area-inset-top, 0px))' }}>
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => { setShowSearch(false); setSearchQuery(''); }}
@@ -144,10 +248,7 @@ export default function App() {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full pl-10 pr-10 py-2.5 rounded-xl text-sm outline-none border-0"
-                    style={{
-                      background: 'var(--mi-card)',
-                      color: 'var(--mi-text-primary)',
-                    }}
+                    style={{ background: 'var(--mi-card)', color: 'var(--mi-text-primary)' }}
                     autoFocus
                   />
                   {searchQuery && (
@@ -164,12 +265,12 @@ export default function App() {
             </div>
           ) : (
             /* 正常模式 */
-            <div className="px-4 pb-2 pt-3">
+            <div className="px-4 pb-2 pt-3" style={{ paddingTop: 'calc(12px + env(safe-area-inset-top, 0px))' }}>
               <div className="flex items-center justify-between mb-3">
-                <h1 className="text-xl font-bold tracking-tight" style={{ color: 'var(--mi-text-primary)' }}>
+                <h1 className="text-[22px] font-bold" style={{ color: 'var(--mi-text-primary)' }}>
                   笔记
                 </h1>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-0.5">
                   <button
                     onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
                     className="w-9 h-9 rounded-full flex items-center justify-center active:bg-gray-200/60 dark:active:bg-gray-700/60 transition-colors"
@@ -207,7 +308,7 @@ export default function App() {
               </div>
 
               {/* 分类标签 — 小米风格 */}
-              <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4">
+              <div className="flex gap-2 overflow-x-auto pb-2.5 scrollbar-hide -mx-4 px-4">
                 {[
                   { id: 'all', label: '全部' },
                   ...cats.categories.map(c => ({ id: c.id, label: c.name })),
@@ -215,7 +316,7 @@ export default function App() {
                   <button
                     key={cat.id}
                     onClick={() => setActiveCategory(cat.id)}
-                    className="px-4 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all"
+                    className="px-4 py-[7px] rounded-full text-[13px] font-medium whitespace-nowrap transition-all"
                     style={{
                       background: activeCategory === cat.id ? 'var(--mi-orange)' : 'var(--mi-card)',
                       color: activeCategory === cat.id ? '#FFFFFF' : 'var(--mi-text-secondary)',
@@ -223,7 +324,7 @@ export default function App() {
                     }}
                   >
                     {cat.label}
-                    <span className="ml-1.5 opacity-60">{catCounts[cat.id] || 0}</span>
+                    <span className="ml-1 opacity-60">{catCounts[cat.id] || 0}</span>
                   </button>
                 ))}
               </div>
@@ -282,7 +383,7 @@ export default function App() {
                     isSelected={sel.isSelected(note.id)}
                     searchQuery={searchQuery}
                     onTap={tapNote}
-                    onLongPress={longPressNote}
+                    onLongPress={() => {}}
                     onMenu={openMenu}
                     onTogglePin={notes.togglePin}
                     onDelete={deleteNote}
@@ -297,7 +398,7 @@ export default function App() {
         {/* ── FAB — 小米风格橙色 ── */}
         <button
           onClick={() => openEditor()}
-          className="w-14 h-14 rounded-full text-white flex items-center justify-center active:scale-90 transition-all shadow-lg ripple-btn"
+          className="w-14 h-14 rounded-full text-white flex items-center justify-center active:scale-90 transition-all ripple-btn"
           style={{
             position: 'fixed',
             right: '20px',
