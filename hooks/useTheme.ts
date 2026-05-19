@@ -33,12 +33,12 @@ export function useTheme() {
     }
 
     // 同步 body 背景色（防止闪烁）
-    body.style.backgroundColor = isDark ? '#1A1A1A' : '#F5F5F5';
+    body.style.backgroundColor = isDark ? '#131316' : '#F6F5F1';
 
-    // 同步 meta theme-color
+    // 同步 meta theme-color（导航栏颜色）
     const meta = document.querySelector('meta[name="theme-color"]');
     if (meta) {
-      meta.setAttribute('content', isDark ? '#1A1A1A' : '#F5F5F5');
+      meta.setAttribute('content', isDark ? '#131316' : '#F6F5F1');
     }
   }, [theme]);
 
