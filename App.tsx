@@ -358,7 +358,7 @@ export default function App() {
         </header>
 
         {/* ── Notes list ── */}
-        <main className="px-4 pb-28 animate-mi-page-in">
+        <main className="px-3 pb-28 animate-mi-page-in">
           {filtered.length === 0 ? (
             <EmptyState hasNotes={notes.notes.length > 0} hasSearch={!!searchQuery.trim()} />
           ) : (
