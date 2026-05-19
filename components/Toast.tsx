@@ -11,7 +11,7 @@ interface Props {
 
 export function ToastContainer({ toasts }: Props) {
   return (
-    <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 flex flex-col-reverse gap-2 items-center pointer-events-none">
+    <div className="fixed bottom-28 left-1/2 -translate-x-1/2 z-50 flex flex-col-reverse gap-2.5 items-center pointer-events-none">
       {toasts.map((toast) => (
         <ToastItem key={toast.id} toast={toast} />
       ))}
@@ -32,21 +32,21 @@ function ToastItem({ toast }: { toast: ToastMessage }) {
   return (
     <div
       className={`
-        px-5 py-2.5 rounded-xl text-sm shadow-lg
-        flex items-center gap-3 max-w-xs pointer-events-auto
+        px-6 py-3 rounded-2xl text-[14px] shadow-lg
+        flex items-center gap-3.5 max-w-xs pointer-events-auto
         ${isExiting ? 'animate-mi-toast-out' : 'animate-mi-toast-in'}
       `}
       style={{
         background: 'var(--mi-card)',
         color: 'var(--mi-text-primary)',
-        border: '1px solid var(--mi-border)',
+        boxShadow: 'var(--mi-shadow-lg)',
       }}
     >
       <span>{toast.message}</span>
       {toast.action && (
         <button
           onClick={toast.action.onClick}
-          className="text-xs font-semibold whitespace-nowrap"
+          className="text-[13px] font-semibold whitespace-nowrap"
           style={{ color: 'var(--mi-orange)' }}
         >
           {toast.action.label}

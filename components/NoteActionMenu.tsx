@@ -50,23 +50,22 @@ export function NoteActionMenu({
       <div className="fixed inset-0 z-40" onClick={onClose} />
 
       <div
-        className="fixed z-50 w-40 rounded-xl py-1.5 overflow-hidden animate-mi-slide-up"
+        className="fixed z-50 w-44 rounded-2xl py-2 overflow-hidden animate-mi-slide-up"
         style={{
-          top: Math.min(position.y, window.innerHeight - 300),
-          left: Math.min(position.x, window.innerWidth - 180),
+          top: Math.min(position.y, window.innerHeight - 340),
+          left: Math.min(position.x, window.innerWidth - 200),
           background: 'var(--mi-card)',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
-          border: '1px solid var(--mi-border)',
+          boxShadow: 'var(--mi-shadow-float)',
         }}
       >
         {items.map(({ icon: Icon, label, onClick, danger, fill, color }) => (
           <button
             key={label}
             onClick={onClick}
-            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm active:bg-gray-50 dark:active:bg-gray-700/50 transition-colors"
+            className="w-full flex items-center gap-3.5 px-5 py-3 text-[15px] active:bg-gray-50 dark:active:bg-gray-700/50 transition-colors"
             style={{ color: danger ? '#FF4444' : color || 'var(--mi-text-primary)' }}
           >
-            <Icon className={`w-4 h-4 ${fill ? 'fill-current' : ''}`} />
+            <Icon className={`w-5 h-5 ${fill ? 'fill-current' : ''}`} />
             {label}
           </button>
         ))}

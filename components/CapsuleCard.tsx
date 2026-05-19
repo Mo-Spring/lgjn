@@ -193,9 +193,9 @@ export function CapsuleCard({
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseLeave}
         className={`
-          ${bgClass} rounded-xl p-3.5 cursor-pointer
+          ${bgClass} rounded-2xl p-4.5 cursor-pointer
           transition-all duration-200 ease-out select-none touch-pan-y
-          flex items-start gap-3
+          flex items-start gap-3.5
           ${isSelected ? 'ring-2 ring-orange-500/50' : ''}
           active:scale-[0.98]
         `}
@@ -205,13 +205,13 @@ export function CapsuleCard({
         {isSelectionMode && (
           <div className="flex-shrink-0 mt-0.5 animate-mi-check-in">
             <div
-              className="w-5 h-5 rounded-full flex items-center justify-center transition-all"
+              className="w-5.5 h-5.5 rounded-full flex items-center justify-center transition-all"
               style={{
                 background: isSelected ? 'var(--mi-orange)' : 'transparent',
                 border: isSelected ? 'none' : '2px solid var(--mi-text-tertiary)',
               }}
             >
-              {isSelected && <Check className="w-3 h-3 text-white" strokeWidth={3} />}
+              {isSelected && <Check className="w-3.5 h-3.5 text-white" strokeWidth={3} />}
             </div>
           </div>
         )}
@@ -219,37 +219,37 @@ export function CapsuleCard({
         <div className="flex-1 min-w-0">
           {/* 置顶标记 */}
           {note.pinned && !isSelectionMode && (
-            <div className="flex items-center gap-1 mb-1">
-              <Pin className="w-3 h-3 fill-current" style={{ color: 'var(--mi-orange)' }} />
-              <span className="text-[10px] font-medium" style={{ color: 'var(--mi-orange)' }}>置顶</span>
+            <div className="flex items-center gap-1.5 mb-1.5">
+              <Pin className="w-3.5 h-3.5 fill-current" style={{ color: 'var(--mi-orange)' }} />
+              <span className="text-[11px] font-medium" style={{ color: 'var(--mi-orange)' }}>置顶</span>
             </div>
           )}
 
           {/* 标题 */}
           {note.title && (
-            <h3 className="font-semibold text-sm mb-1 truncate" style={{ color: 'var(--mi-text-primary)' }}>
+            <h3 className="font-semibold text-[15px] mb-1.5 truncate" style={{ color: 'var(--mi-text-primary)' }}>
               {highlightText(note.title, searchQuery)}
             </h3>
           )}
 
           {/* 内容预览 */}
           {note.content && (
-            <p className="text-xs line-clamp-2 leading-relaxed" style={{ color: 'var(--mi-text-secondary)' }}>
+            <p className="text-[13px] line-clamp-2 leading-relaxed" style={{ color: 'var(--mi-text-secondary)' }}>
               {highlightText(note.content, searchQuery)}
             </p>
           )}
 
           {/* 底部 */}
-          <div className="flex items-center gap-2 mt-2">
+          <div className="flex items-center gap-2.5 mt-2.5">
             {category && (
               <span
-                className="text-[10px] px-2 py-0.5 rounded-full font-medium"
+                className="text-[11px] px-2.5 py-1 rounded-full font-medium"
                 style={{ background: 'var(--mi-hover)', color: 'var(--mi-text-tertiary)' }}
               >
                 {category.name}
               </span>
             )}
-            <span className="text-[10px]" style={{ color: 'var(--mi-text-tertiary)' }}>
+            <span className="text-[11px]" style={{ color: 'var(--mi-text-tertiary)' }}>
               {formatTime(note.updatedAt)}
             </span>
           </div>
@@ -270,7 +270,7 @@ export function CapsuleCard({
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseLeave}
       className={`
-        ${bgClass} rounded-xl p-3.5 cursor-pointer
+        ${bgClass} rounded-2xl p-4 cursor-pointer
         transition-all duration-200 ease-out select-none touch-pan-y
         ${isSelected ? 'ring-2 ring-orange-500/50' : ''}
         active:scale-[0.97]
@@ -280,46 +280,46 @@ export function CapsuleCard({
     >
       {/* 选择指示器 */}
       {isSelectionMode && (
-        <div className="absolute top-2.5 right-2.5 animate-mi-check-in">
+        <div className="absolute top-3 right-3 animate-mi-check-in">
           <div
-            className="w-5 h-5 rounded-full flex items-center justify-center transition-all"
+            className="w-5.5 h-5.5 rounded-full flex items-center justify-center transition-all"
             style={{
               background: isSelected ? 'var(--mi-orange)' : 'transparent',
               border: isSelected ? 'none' : '2px solid var(--mi-text-tertiary)',
             }}
           >
-            {isSelected && <Check className="w-3 h-3 text-white" strokeWidth={3} />}
+            {isSelected && <Check className="w-3.5 h-3.5 text-white" strokeWidth={3} />}
           </div>
         </div>
       )}
 
       {/* 置顶标记 */}
       {note.pinned && !isSelectionMode && (
-        <div className="flex items-center gap-1 mb-2">
-          <Pin className="w-3 h-3 fill-current" style={{ color: 'var(--mi-orange)' }} />
-          <span className="text-[10px] font-medium" style={{ color: 'var(--mi-orange)' }}>置顶</span>
+        <div className="flex items-center gap-1.5 mb-2.5">
+          <Pin className="w-3.5 h-3.5 fill-current" style={{ color: 'var(--mi-orange)' }} />
+          <span className="text-[11px] font-medium" style={{ color: 'var(--mi-orange)' }}>置顶</span>
         </div>
       )}
 
       {/* 标题 */}
       {note.title && (
-        <h3 className="font-semibold text-sm mb-1.5 line-clamp-2" style={{ color: 'var(--mi-text-primary)' }}>
+        <h3 className="font-semibold text-[15px] mb-2 line-clamp-2" style={{ color: 'var(--mi-text-primary)' }}>
           {highlightText(note.title, searchQuery)}
         </h3>
       )}
 
       {/* 内容预览 */}
       {note.content && (
-        <p className="text-xs line-clamp-4 leading-relaxed" style={{ color: 'var(--mi-text-secondary)' }}>
+        <p className="text-[13px] line-clamp-4 leading-relaxed" style={{ color: 'var(--mi-text-secondary)' }}>
           {highlightText(note.content, searchQuery)}
         </p>
       )}
 
       {/* 底部：分类 + 时间 */}
-      <div className="flex items-center justify-between mt-2.5 pt-2" style={{ borderTop: '1px solid var(--mi-divider)' }}>
+      <div className="flex items-center justify-between mt-3 pt-2.5" style={{ borderTop: '1px solid var(--mi-divider)' }}>
         {category ? (
           <span
-            className="text-[10px] px-2 py-0.5 rounded-full font-medium"
+            className="text-[11px] px-2.5 py-1 rounded-full font-medium"
             style={{ background: 'var(--mi-hover)', color: 'var(--mi-text-tertiary)' }}
           >
             {category.name}
@@ -327,7 +327,7 @@ export function CapsuleCard({
         ) : (
           <span />
         )}
-        <span className="text-[10px]" style={{ color: 'var(--mi-text-tertiary)' }}>
+        <span className="text-[11px]" style={{ color: 'var(--mi-text-tertiary)' }}>
           {formatTime(note.updatedAt)}
         </span>
       </div>

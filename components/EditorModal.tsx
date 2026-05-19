@@ -189,15 +189,15 @@ export function EditorModal({
       {/* 遮罩 */}
       <div
         className="absolute inset-0 transition-opacity duration-300"
-        style={{ background: 'rgba(0,0,0,0.4)', opacity: isClosing ? 0 : 1 }}
+        style={{ background: 'rgba(0,0,0,0.5)', opacity: isClosing ? 0 : 1 }}
         onClick={handleClose}
       />
 
       {/* 编辑器面板 */}
       <div
         className={`
-          absolute inset-x-0 bottom-0 top-8
-          rounded-t-2xl flex flex-col overflow-hidden
+          absolute inset-x-0 bottom-0 top-6
+          rounded-t-3xl flex flex-col overflow-hidden
           ${isClosing ? 'animate-mi-editor-out' : 'animate-mi-editor-in'}
         `}
         style={{
@@ -205,31 +205,32 @@ export function EditorModal({
           transform: `translateY(${dragDeltaY}px)`,
           transition: isDragging ? 'none' : 'transform 0.3s cubic-bezier(0.22, 1, 0.36, 1)',
           opacity: Math.max(0, 1 - dragDeltaY / 400),
+          boxShadow: 'var(--mi-shadow-float)',
         }}
       >
         {/* 拖拽手柄 */}
         <div
-          className="flex items-center justify-center py-2 cursor-grab active:cursor-grabbing touch-none"
+          className="flex items-center justify-center py-3 cursor-grab active:cursor-grabbing touch-none"
           onTouchStart={handleDragStart}
           onTouchMove={handleDragMove}
           onTouchEnd={handleDragEnd}
         >
-          <div className="w-8 h-1 rounded-full" style={{ background: 'var(--mi-border)' }} />
+          <div className="w-10 h-1.5 rounded-full" style={{ background: 'var(--mi-border)' }} />
         </div>
 
-        {/* 头部 — 小米风格工具栏 */}
-        <div className="flex items-center justify-between px-4 pb-3">
-          <div className="flex items-center gap-2">
+        {/* 头部工具栏 */}
+        <div className="flex items-center justify-between px-5 pb-4">
+          <div className="flex items-center gap-3">
             <button
               onClick={handleClose}
-              className="w-9 h-9 rounded-full flex items-center justify-center active:bg-gray-200/60 dark:active:bg-gray-700/60 transition-colors"
+              className="w-10 h-10 rounded-full flex items-center justify-center active:bg-gray-200/60 dark:active:bg-gray-700/60 transition-colors"
             >
               <ArrowLeft className="w-5 h-5" style={{ color: 'var(--mi-text-primary)' }} />
             </button>
             {/* 保存状态 */}
             {saveStatus !== 'idle' && (
               <span
-                className="text-[11px] px-2 py-0.5 rounded-full font-medium"
+                className="text-[12px] px-3 py-1 rounded-full font-medium"
                 style={{
                   background: saveStatus === 'saved' ? '#E8F8EE' : saveStatus === 'error' ? '#FFE8E8' : 'var(--mi-card)',
                   color: saveStatus === 'saved' ? '#22C55E' : saveStatus === 'error' ? '#FF4444' : 'var(--mi-text-tertiary)',
@@ -240,38 +241,38 @@ export function EditorModal({
             )}
           </div>
 
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1.5">
             {/* 颜色按钮 */}
             <button
               onClick={() => { setShowColorPicker(!showColorPicker); setShowCategoryPicker(false); }}
-              className="w-9 h-9 rounded-full flex items-center justify-center active:bg-gray-200/60 dark:active:bg-gray-700/60 transition-colors relative"
+              className="w-10 h-10 rounded-full flex items-center justify-center active:bg-gray-200/60 dark:active:bg-gray-700/60 transition-colors relative"
             >
-              <div className="w-5 h-5 rounded-full border-2" style={{ background: selectedColor.color, borderColor: 'var(--mi-border)' }} />
+              <div className="w-6 h-6 rounded-full border-2" style={{ background: selectedColor.color, borderColor: 'var(--mi-border)' }} />
             </button>
             {/* 分类按钮 */}
             <button
               onClick={() => { setShowCategoryPicker(!showCategoryPicker); setShowColorPicker(false); }}
-              className="w-9 h-9 rounded-full flex items-center justify-center active:bg-gray-200/60 dark:active:bg-gray-700/60 transition-colors"
+              className="w-10 h-10 rounded-full flex items-center justify-center active:bg-gray-200/60 dark:active:bg-gray-700/60 transition-colors"
             >
-              <FolderOpen className="w-[18px] h-[18px]" style={{ color: category ? 'var(--mi-orange)' : 'var(--mi-text-secondary)' }} />
+              <FolderOpen className="w-5 h-5" style={{ color: category ? 'var(--mi-orange)' : 'var(--mi-text-secondary)' }} />
             </button>
           </div>
         </div>
 
         {/* 颜色选择器弹出 */}
         {showColorPicker && (
-          <div className="px-4 pb-3 animate-mi-page-in">
-            <div className="flex gap-3 p-3 rounded-xl" style={{ background: 'var(--mi-card)' }}>
+          <div className="px-5 pb-4 animate-mi-page-in">
+            <div className="flex gap-3.5 p-4 rounded-2xl" style={{ background: 'var(--mi-card)', boxShadow: 'var(--mi-shadow-lg)' }}>
               {COLORS.map((c) => (
                 <button
                   key={c.value}
                   onClick={() => handleColorChange(c.value)}
-                  className="relative w-8 h-8 rounded-full transition-transform active:scale-90"
-                  style={{ background: c.color }}
+                  className="relative w-10 h-10 rounded-full transition-transform active:scale-90"
+                  style={{ background: c.color, boxShadow: color === c.value ? '0 0 0 2px var(--mi-orange)' : 'none' }}
                 >
                   {color === c.value && (
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <Check className="w-4 h-4 text-gray-600" strokeWidth={3} />
+                      <Check className="w-5 h-5 text-gray-600" strokeWidth={3} />
                     </div>
                   )}
                 </button>
@@ -282,52 +283,52 @@ export function EditorModal({
 
         {/* 分类选择器弹出 */}
         {showCategoryPicker && (
-          <div className="px-4 pb-3 animate-mi-page-in">
-            <div className="p-2 rounded-xl" style={{ background: 'var(--mi-card)' }}>
+          <div className="px-5 pb-4 animate-mi-page-in">
+            <div className="p-2.5 rounded-2xl" style={{ background: 'var(--mi-card)', boxShadow: 'var(--mi-shadow-lg)' }}>
               <button
                 onClick={() => handleCategoryChange('')}
-                className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm transition-colors active:bg-gray-100 dark:active:bg-gray-700"
+                className="w-full flex items-center justify-between px-4 py-3 rounded-xl text-[15px] transition-colors active:bg-gray-100 dark:active:bg-gray-700"
                 style={{ color: !category ? 'var(--mi-orange)' : 'var(--mi-text-primary)' }}
               >
                 <span>未分类</span>
-                {!category && <Check className="w-4 h-4" />}
+                {!category && <Check className="w-5 h-5" />}
               </button>
               {categories.map((c) => (
                 <button
                   key={c.id}
                   onClick={() => handleCategoryChange(c.id)}
-                  className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm transition-colors active:bg-gray-100 dark:active:bg-gray-700"
+                  className="w-full flex items-center justify-between px-4 py-3 rounded-xl text-[15px] transition-colors active:bg-gray-100 dark:active:bg-gray-700"
                   style={{ color: category === c.id ? 'var(--mi-orange)' : 'var(--mi-text-primary)' }}
                 >
                   <span>{c.name}</span>
-                  {category === c.id && <Check className="w-4 h-4" />}
+                  {category === c.id && <Check className="w-5 h-5" />}
                 </button>
               ))}
             </div>
           </div>
         )}
 
-        {/* 编辑区域 — 简洁风格 */}
-        <div className="flex-1 overflow-y-auto px-5 pb-8">
+        {/* 编辑区域 */}
+        <div className="flex-1 overflow-y-auto px-6 pb-10">
           {/* 标题 */}
           <input
             type="text"
             placeholder="标题"
             value={title}
             onChange={handleTitleChange}
-            className="w-full text-xl font-bold bg-transparent outline-none border-0 mb-3 placeholder-gray-300 dark:placeholder-gray-600"
+            className="w-full text-2xl font-bold bg-transparent outline-none border-0 mb-4 placeholder-gray-300 dark:placeholder-gray-600"
             style={{ color: 'var(--mi-text-primary)' }}
           />
 
           {/* 分割线 */}
-          <div className="h-px mb-4" style={{ background: 'var(--mi-divider)' }} />
+          <div className="h-px mb-5" style={{ background: 'var(--mi-divider)' }} />
 
           {/* 内容 */}
           <textarea
             placeholder="写下你的灵感..."
             value={content}
             onChange={handleContentChange}
-            className="w-full bg-transparent outline-none resize-none border-0 leading-relaxed text-[15px] placeholder-gray-300 dark:placeholder-gray-600"
+            className="w-full bg-transparent outline-none resize-none border-0 leading-relaxed text-[16px] placeholder-gray-300 dark:placeholder-gray-600"
             style={{ color: 'var(--mi-text-secondary)', minHeight: '60vh' }}
             autoFocus
           />
@@ -335,13 +336,13 @@ export function EditorModal({
 
         {/* 底部状态栏 */}
         <div
-          className="flex items-center justify-between px-5 py-3 border-t"
+          className="flex items-center justify-between px-6 py-4 border-t"
           style={{ borderColor: 'var(--mi-border)', background: 'var(--mi-card)' }}
         >
-          <span className="text-[11px]" style={{ color: 'var(--mi-text-tertiary)' }}>
+          <span className="text-[12px]" style={{ color: 'var(--mi-text-tertiary)' }}>
             {content.length > 0 ? `${content.length} 字` : ''}
           </span>
-          <span className="text-[11px]" style={{ color: 'var(--mi-text-tertiary)' }}>
+          <span className="text-[12px]" style={{ color: 'var(--mi-text-tertiary)' }}>
             {currentNote ? `编辑于 ${formatTime(currentNote.updatedAt)}` : '新建胶囊'}
           </span>
         </div>

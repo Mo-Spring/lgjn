@@ -80,7 +80,7 @@ export default function App() {
     if (!pluginsLoaded) return;
     const applyBarColors = async () => {
       const isDark = theme === 'dark';
-      const bgColor = isDark ? '#1A1A1A' : '#F5F5F5';
+      const bgColor = isDark ? '#131316' : '#F6F5F1';
 
       // 状态栏
       if (StatusBarPlugin) {
@@ -203,14 +203,14 @@ export default function App() {
   if (notes.loading) {
     return (
       <div className="fixed inset-0 flex items-center justify-center" style={{ background: 'var(--mi-bg)' }}>
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-400 to-orange-500 flex items-center justify-center animate-pulse">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center animate-pulse shadow-lg">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
               <path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5" stroke="white" strokeWidth="2" strokeLinecap="round"/>
               <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </div>
-          <span className="text-sm" style={{ color: 'var(--mi-text-tertiary)' }}>加载中...</span>
+          <span className="text-[15px]" style={{ color: 'var(--mi-text-tertiary)' }}>加载中...</span>
         </div>
       </div>
     );
@@ -220,36 +220,36 @@ export default function App() {
     <ErrorBoundary>
       <div className="min-h-screen" style={{ background: 'var(--mi-bg)', color: 'var(--mi-text-primary)' }}>
 
-        {/* ── Header — 灵感胶囊风格 ── */}
-        <header className="sticky top-0 z-30" style={{ background: 'var(--mi-bg)' }}>
+        {/* ── Header ── */}
+        <header className="sticky top-0 z-30 glass" style={{ background: 'var(--mi-bg)' }}>
           {showSearch ? (
             /* 搜索模式 */
-            <div className="px-4 pb-3 pt-3 animate-mi-page-in" style={{ paddingTop: 'calc(12px + env(safe-area-inset-top, 0px))' }}>
-              <div className="flex items-center gap-3">
+            <div className="px-5 pb-4 pt-4 animate-mi-page-in" style={{ paddingTop: 'calc(16px + env(safe-area-inset-top, 0px))' }}>
+              <div className="flex items-center gap-3.5">
                 <button
                   onClick={() => { setShowSearch(false); setSearchQuery(''); }}
-                  className="w-9 h-9 rounded-full flex items-center justify-center active:bg-gray-200/60 dark:active:bg-gray-700/60 transition-colors"
+                  className="w-10 h-10 rounded-full flex items-center justify-center active:bg-gray-200/60 dark:active:bg-gray-700/60 transition-colors"
                 >
                   <ArrowLeft className="w-5 h-5" style={{ color: 'var(--mi-text-primary)' }} />
                 </button>
                 <div className="flex-1 relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--mi-text-tertiary)' }} />
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5" style={{ color: 'var(--mi-text-tertiary)' }} />
                   <input
                     type="text"
                     placeholder="搜索胶囊..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-10 pr-10 py-2.5 rounded-xl text-sm outline-none border-0"
-                    style={{ background: 'var(--mi-card)', color: 'var(--mi-text-primary)' }}
+                    className="w-full pl-12 pr-12 py-3 rounded-2xl text-[15px] outline-none border-0"
+                    style={{ background: 'var(--mi-card)', color: 'var(--mi-text-primary)', boxShadow: 'var(--mi-shadow)' }}
                     autoFocus
                   />
                   {searchQuery && (
                     <button
                       onClick={() => setSearchQuery('')}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full flex items-center justify-center"
+                      className="absolute right-4 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full flex items-center justify-center"
                       style={{ background: 'var(--mi-text-tertiary)' }}
                     >
-                      <X className="w-3 h-3 text-white" />
+                      <X className="w-3.5 h-3.5 text-white" />
                     </button>
                   )}
                 </div>
@@ -257,50 +257,50 @@ export default function App() {
             </div>
           ) : (
             /* 正常模式 */
-            <div className="px-4 pb-2 pt-3" style={{ paddingTop: 'calc(12px + env(safe-area-inset-top, 0px))' }}>
-              <div className="flex items-center justify-between mb-3">
-                <h1 className="text-[22px] font-bold" style={{ color: 'var(--mi-text-primary)' }}>
+            <div className="px-5 pb-3 pt-4" style={{ paddingTop: 'calc(16px + env(safe-area-inset-top, 0px))' }}>
+              <div className="flex items-center justify-between mb-4">
+                <h1 className="text-2xl font-bold tracking-tight" style={{ color: 'var(--mi-text-primary)' }}>
                   灵感胶囊
                 </h1>
-                <div className="flex items-center gap-0.5">
+                <div className="flex items-center gap-1">
                   <button
                     onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
-                    className="w-9 h-9 rounded-full flex items-center justify-center active:bg-gray-200/60 dark:active:bg-gray-700/60 transition-colors"
+                    className="w-10 h-10 rounded-full flex items-center justify-center active:bg-gray-200/60 dark:active:bg-gray-700/60 transition-colors"
                   >
                     {viewMode === 'grid' ? (
-                      <List className="w-[18px] h-[18px]" style={{ color: 'var(--mi-text-secondary)' }} />
+                      <List className="w-5 h-5" style={{ color: 'var(--mi-text-secondary)' }} />
                     ) : (
-                      <LayoutGrid className="w-[18px] h-[18px]" style={{ color: 'var(--mi-text-secondary)' }} />
+                      <LayoutGrid className="w-5 h-5" style={{ color: 'var(--mi-text-secondary)' }} />
                     )}
                   </button>
                   <button
                     onClick={() => setShowSearch(true)}
-                    className="w-9 h-9 rounded-full flex items-center justify-center active:bg-gray-200/60 dark:active:bg-gray-700/60 transition-colors"
+                    className="w-10 h-10 rounded-full flex items-center justify-center active:bg-gray-200/60 dark:active:bg-gray-700/60 transition-colors"
                   >
-                    <Search className="w-[18px] h-[18px]" style={{ color: 'var(--mi-text-secondary)' }} />
+                    <Search className="w-5 h-5" style={{ color: 'var(--mi-text-secondary)' }} />
                   </button>
                   <button
                     onClick={() => setShowTrash(true)}
-                    className="w-9 h-9 rounded-full flex items-center justify-center active:bg-gray-200/60 dark:active:bg-gray-700/60 transition-colors relative"
+                    className="w-10 h-10 rounded-full flex items-center justify-center active:bg-gray-200/60 dark:active:bg-gray-700/60 transition-colors relative"
                   >
-                    <Trash2 className="w-[18px] h-[18px]" style={{ color: 'var(--mi-text-secondary)' }} />
+                    <Trash2 className="w-5 h-5" style={{ color: 'var(--mi-text-secondary)' }} />
                     {notes.trashNotes.length > 0 && (
-                      <span className="absolute top-1 right-1 w-3.5 h-3.5 text-white text-[8px] rounded-full flex items-center justify-center font-bold" style={{ background: 'var(--mi-orange)' }}>
+                      <span className="absolute top-1 right-1 w-4 h-4 text-white text-[9px] rounded-full flex items-center justify-center font-bold" style={{ background: 'var(--mi-orange)' }}>
                         {notes.trashNotes.length > 9 ? '9+' : notes.trashNotes.length}
                       </span>
                     )}
                   </button>
                   <button
                     onClick={() => setShowSettings(true)}
-                    className="w-9 h-9 rounded-full flex items-center justify-center active:bg-gray-200/60 dark:active:bg-gray-700/60 transition-colors"
+                    className="w-10 h-10 rounded-full flex items-center justify-center active:bg-gray-200/60 dark:active:bg-gray-700/60 transition-colors"
                   >
-                    <MoreHorizontal className="w-[18px] h-[18px]" style={{ color: 'var(--mi-text-secondary)' }} />
+                    <MoreHorizontal className="w-5 h-5" style={{ color: 'var(--mi-text-secondary)' }} />
                   </button>
                 </div>
               </div>
 
-              {/* 分类标签 — 小米风格 */}
-              <div className="flex gap-2 overflow-x-auto pb-2.5 scrollbar-hide -mx-4 px-4">
+              {/* 分类标签 */}
+              <div className="flex gap-2.5 overflow-x-auto pb-3 scrollbar-hide -mx-5 px-5">
                 {[
                   { id: 'all', label: '全部' },
                   ...cats.categories.map(c => ({ id: c.id, label: c.name })),
@@ -308,15 +308,20 @@ export default function App() {
                   <button
                     key={cat.id}
                     onClick={() => setActiveCategory(cat.id)}
-                    className="px-4 py-[7px] rounded-full text-[13px] font-medium whitespace-nowrap transition-all"
+                    className="px-5 py-2 rounded-full text-[14px] font-medium whitespace-nowrap transition-all"
                     style={{
-                      background: activeCategory === cat.id ? 'var(--mi-orange)' : 'var(--mi-card)',
+                      background: activeCategory === cat.id
+                        ? 'linear-gradient(135deg, #FF8533, #FF6A00)'
+                        : 'var(--mi-card)',
                       color: activeCategory === cat.id ? '#FFFFFF' : 'var(--mi-text-secondary)',
                       border: activeCategory === cat.id ? 'none' : '1px solid var(--mi-border)',
+                      boxShadow: activeCategory === cat.id
+                        ? '0 2px 8px rgba(255, 106, 0, 0.25)'
+                        : 'var(--mi-shadow)',
                     }}
                   >
                     {cat.label}
-                    <span className="ml-1 opacity-60">{catCounts[cat.id] || 0}</span>
+                    <span className="ml-1.5 opacity-60">{catCounts[cat.id] || 0}</span>
                   </button>
                 ))}
               </div>
@@ -326,46 +331,46 @@ export default function App() {
           {/* 多选操作栏 */}
           {sel.isSelectionMode && (
             <div
-              className="flex items-center justify-between px-4 py-2.5 border-t animate-mi-page-in"
+              className="flex items-center justify-between px-5 py-3 border-t animate-mi-page-in"
               style={{ background: 'var(--mi-card)', borderColor: 'var(--mi-border)' }}
             >
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2.5">
                 <button
                   onClick={sel.exitSelectionMode}
-                  className="w-8 h-8 rounded-full flex items-center justify-center active:bg-gray-200/60 dark:active:bg-gray-700/60 transition-colors"
+                  className="w-9 h-9 rounded-full flex items-center justify-center active:bg-gray-200/60 dark:active:bg-gray-700/60 transition-colors"
                 >
-                  <X className="w-4 h-4" style={{ color: 'var(--mi-text-secondary)' }} />
+                  <X className="w-5 h-5" style={{ color: 'var(--mi-text-secondary)' }} />
                 </button>
-                <span className="text-sm font-medium" style={{ color: 'var(--mi-text-primary)' }}>
+                <span className="text-[15px] font-medium" style={{ color: 'var(--mi-text-primary)' }}>
                   已选 {sel.selectedCount} 项
                 </span>
               </div>
               <button
                 onClick={batchDelete}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-white text-sm font-medium active:opacity-80 transition-opacity"
-                style={{ background: '#FF4444' }}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-white text-[14px] font-medium active:opacity-80 transition-opacity"
+                style={{ background: 'linear-gradient(135deg, #FF5555, #DD3333)', boxShadow: '0 2px 8px rgba(255, 68, 68, 0.3)' }}
               >
-                <Trash2 className="w-3.5 h-3.5" />
+                <Trash2 className="w-4 h-4" />
                 删除
               </button>
             </div>
           )}
         </header>
 
-        {/* ── Notes list — 小米瀑布流风格 ── */}
-        <main className="px-3 pb-24 animate-mi-page-in">
+        {/* ── Notes list ── */}
+        <main className="px-4 pb-28 animate-mi-page-in">
           {filtered.length === 0 ? (
             <EmptyState hasNotes={notes.notes.length > 0} hasSearch={!!searchQuery.trim()} />
           ) : (
             <div className={viewMode === 'grid'
-              ? 'columns-2 gap-2.5 [column-fill:balance]'
-              : 'flex flex-col gap-2'
+              ? 'columns-2 gap-3 [column-fill:balance]'
+              : 'flex flex-col gap-2.5'
             }>
               {filtered.map((note, idx) => (
                 <div
                   key={note.id}
                   className="animate-mi-slide-up opacity-0 break-inside-avoid"
-                  style={{ animationDelay: `${Math.min(idx * 0.03, 0.18)}s` }}
+                  style={{ animationDelay: `${Math.min(idx * 0.04, 0.24)}s` }}
                 >
                   <CapsuleCard
                     note={note}
@@ -387,20 +392,20 @@ export default function App() {
           )}
         </main>
 
-        {/* ── FAB — 小米风格橙色 ── */}
+        {/* ── FAB ── */}
         <button
           onClick={() => openEditor()}
-          className="w-14 h-14 rounded-full text-white flex items-center justify-center active:scale-90 transition-all ripple-btn"
+          className="w-16 h-16 rounded-2xl text-white flex items-center justify-center active:scale-90 transition-all ripple-btn"
           style={{
             position: 'fixed',
-            right: '20px',
-            bottom: 'calc(28px + env(safe-area-inset-bottom, 0px))',
+            right: '22px',
+            bottom: 'calc(32px + env(safe-area-inset-bottom, 0px))',
             zIndex: 9999,
-            background: 'linear-gradient(135deg, #FF8533, #FF6A00)',
-            boxShadow: '0 4px 16px rgba(255, 106, 0, 0.35)',
+            background: 'linear-gradient(135deg, #FF8533, #FF5500)',
+            boxShadow: '0 6px 24px rgba(255, 106, 0, 0.4), 0 2px 8px rgba(255, 106, 0, 0.2)',
           }}
         >
-          <Plus className="w-6 h-6" strokeWidth={2.5} />
+          <Plus className="w-7 h-7" strokeWidth={2.5} />
         </button>
 
         {/* ── Modals ── */}
