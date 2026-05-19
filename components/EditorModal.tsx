@@ -9,7 +9,7 @@ import React, {
   useRef,
   useCallback,
 } from 'react';
-import { X, ArrowLeft, Palette, FolderOpen, Check } from 'lucide-react';
+import { X, ArrowLeft, Palette, FolderOpen, Check, Save } from 'lucide-react';
 import type { Note, NoteColor, Category, SaveStatus } from '../types';
 
 interface Props {
@@ -55,7 +55,7 @@ export function EditorModal({
   const [isDragging, setIsDragging] = useState(false);
   const dragStartY = useRef(0);
 
-  // 自动保存计时器
+  // 自动保存计时器（防抖模式）
   const autoSaveTimer = useRef<number | null>(null);
   const contentChanged = useRef(false);
 
@@ -82,8 +82,8 @@ export function EditorModal({
     setShowCategoryPicker(false);
   }, [isOpen, note]);
 
-  // 自动保存逻辑
-  const doAutoSave = useCallback(() => {
+  // 执行保存
+  const doSave = useCallback(() => {
     if (!contentChanged.current) return;
 
     if (currentNote) {
@@ -92,7 +92,7 @@ export function EditorModal({
       setTimeout(() => {
         setSaveStatus('saved');
         setTimeout(() => setSaveStatus('idle'), 2000);
-      }, 300);
+      }, 200);
     } else if (title || content) {
       setSaveStatus('saving');
       onCreate({ title, content, color, category }).then((newNote) => {
@@ -100,52 +100,76 @@ export function EditorModal({
         setTimeout(() => {
           setSaveStatus('saved');
           setTimeout(() => setSaveStatus('idle'), 2000);
-        }, 300);
+        }, 200);
       });
     }
 
     contentChanged.current = false;
   }, [currentNote, title, content, color, category, onSave, onCreate]);
 
-  // 设置自动保存间隔
+  // 防抖自动保存：内容变化后 800ms 触发
+  const scheduleAutoSave = useCallback(() => {
+    if (autoSaveTimer.current !== null) {
+      clearTimeout(autoSaveTimer.current);
+    }
+    autoSaveTimer.current = window.setTimeout(() => {
+      doSave();
+      autoSaveTimer.current = null;
+    }, 800);
+  }, [doSave]);
+
+  // 清理定时器
   useEffect(() => {
     if (!isOpen) return;
-    autoSaveTimer.current = window.setInterval(doAutoSave, 2000);
     return () => {
       if (autoSaveTimer.current !== null) {
-        clearInterval(autoSaveTimer.current);
+        clearTimeout(autoSaveTimer.current);
         autoSaveTimer.current = null;
       }
     };
-  }, [isOpen, doAutoSave]);
+  }, [isOpen]);
 
   // beforeunload 清理
   useEffect(() => {
     if (!isOpen) return;
-    const handler = () => { if (contentChanged.current) doAutoSave(); };
+    const handler = () => { if (contentChanged.current) doSave(); };
     window.addEventListener('beforeunload', handler);
     return () => window.removeEventListener('beforeunload', handler);
-  }, [isOpen, doAutoSave]);
+  }, [isOpen, doSave]);
 
-  // 内容变化标记
+  // 内容变化标记 + 触发防抖保存
+  const markChanged = useCallback(() => {
+    contentChanged.current = true;
+    scheduleAutoSave();
+  }, [scheduleAutoSave]);
+
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setTitle(e.target.value);
-    contentChanged.current = true;
+    markChanged();
   };
   const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setContent(e.target.value);
-    contentChanged.current = true;
+    markChanged();
   };
   const handleColorChange = (c: NoteColor) => {
     setColor(c);
-    contentChanged.current = true;
+    markChanged();
     setShowColorPicker(false);
   };
   const handleCategoryChange = (catId: string) => {
     setCategory(catId);
-    contentChanged.current = true;
+    markChanged();
     setShowCategoryPicker(false);
   };
+
+  // 手动保存按钮
+  const handleManualSave = useCallback(() => {
+    if (autoSaveTimer.current !== null) {
+      clearTimeout(autoSaveTimer.current);
+      autoSaveTimer.current = null;
+    }
+    doSave();
+  }, [doSave]);
 
   // 拉下关闭手势
   const handleDragStart = useCallback((e: React.TouchEvent) => {
@@ -174,10 +198,10 @@ export function EditorModal({
 
   // 关闭前保存
   const handleClose = useCallback(() => {
-    if (contentChanged.current) doAutoSave();
+    if (contentChanged.current) doSave();
     setIsClosing(true);
     setTimeout(onClose, 250);
-  }, [doAutoSave, onClose]);
+  }, [doSave, onClose]);
 
   if (!isOpen) return null;
 
@@ -242,6 +266,15 @@ export function EditorModal({
           </div>
 
           <div className="flex items-center gap-1.5">
+            {/* 保存按钮 */}
+            <button
+              onClick={handleManualSave}
+              disabled={!contentChanged.current && saveStatus !== 'saving'}
+              className="w-10 h-10 rounded-full flex items-center justify-center active:bg-gray-200/60 dark:active:bg-gray-700/60 transition-colors disabled:opacity-30"
+              title="保存"
+            >
+              <Save className="w-5 h-5" style={{ color: saveStatus === 'saved' ? '#22C55E' : 'var(--mi-text-secondary)' }} />
+            </button>
             {/* 颜色按钮 */}
             <button
               onClick={() => { setShowColorPicker(!showColorPicker); setShowCategoryPicker(false); }}

@@ -75,19 +75,20 @@ export function useNotes() {
 
   /** 软删除胶囊（移到回收站） */
   const softDelete = useCallback(async (id: string) => {
-    let deletedNote: Note | undefined;
-    setNotes((prev) => {
-      const idx = prev.findIndex((n) => n.id === id);
-      if (idx === -1) return prev;
-      deletedNote = { ...prev[idx], deletedAt: Date.now() };
-      dbSave(deletedNote); // fire-and-forget
-      return prev.filter((n) => n.id !== id);
-    });
-    if (deletedNote) {
-      setTrashNotes((prev) => [deletedNote!, ...prev]);
-    }
-    return deletedNote;
-  }, []);
+    // 先在 notes 中定位目标笔记，再同步更新两个 state
+    const target = notes.find((n) => n.id === id);
+    if (!target) return undefined;
+
+    const deleted: Note = { ...target, deletedAt: Date.now() };
+    dbSave(deleted); // fire-and-forget，不放在 state updater 里
+
+    // 从活跃列表移除
+    setNotes((prev) => prev.filter((n) => n.id !== id));
+    // 加入回收站列表（置顶）
+    setTrashNotes((prev) => [deleted, ...prev]);
+
+    return deleted;
+  }, [notes]);
 
   /** 从回收站恢复 */
   const restoreNote = useCallback(async (id: string) => {
