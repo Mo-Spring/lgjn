@@ -58,6 +58,7 @@ export function EditorModal({
   // 自动保存计时器（防抖模式）
   const autoSaveTimer = useRef<number | null>(null);
   const contentChanged = useRef(false);
+  const doSaveRef = useRef<() => void>(() => {});
 
   // 初始化编辑器内容
   useEffect(() => {
@@ -107,16 +108,19 @@ export function EditorModal({
     contentChanged.current = false;
   }, [currentNote, title, content, color, category, onSave, onCreate]);
 
+  // 始终指向最新的 doSave，防抖定时器通过 ref 调用
+  doSaveRef.current = doSave;
+
   // 防抖自动保存：内容变化后 800ms 触发
   const scheduleAutoSave = useCallback(() => {
     if (autoSaveTimer.current !== null) {
       clearTimeout(autoSaveTimer.current);
     }
     autoSaveTimer.current = window.setTimeout(() => {
-      doSave();
+      doSaveRef.current();
       autoSaveTimer.current = null;
     }, 800);
-  }, [doSave]);
+  }, []);
 
   // 清理定时器
   useEffect(() => {
@@ -132,10 +136,10 @@ export function EditorModal({
   // beforeunload 清理
   useEffect(() => {
     if (!isOpen) return;
-    const handler = () => { if (contentChanged.current) doSave(); };
+    const handler = () => { if (contentChanged.current) doSaveRef.current(); };
     window.addEventListener('beforeunload', handler);
     return () => window.removeEventListener('beforeunload', handler);
-  }, [isOpen, doSave]);
+  }, [isOpen]);
 
   // 内容变化标记 + 触发防抖保存
   const markChanged = useCallback(() => {
@@ -168,8 +172,8 @@ export function EditorModal({
       clearTimeout(autoSaveTimer.current);
       autoSaveTimer.current = null;
     }
-    doSave();
-  }, [doSave]);
+    doSaveRef.current();
+  }, []);
 
   // 拉下关闭手势
   const handleDragStart = useCallback((e: React.TouchEvent) => {
@@ -198,10 +202,10 @@ export function EditorModal({
 
   // 关闭前保存
   const handleClose = useCallback(() => {
-    if (contentChanged.current) doSave();
+    if (contentChanged.current) doSaveRef.current();
     setIsClosing(true);
     setTimeout(onClose, 250);
-  }, [doSave, onClose]);
+  }, [onClose]);
 
   if (!isOpen) return null;
 
