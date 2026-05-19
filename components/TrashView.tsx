@@ -1,5 +1,5 @@
 // ============================================================
-// components/TrashView.tsx — 小米笔记风格回收站
+// components/TrashView.tsx — 灵感胶囊风格回收站
 // ============================================================
 
 import React, { useState } from 'react';
@@ -107,7 +107,7 @@ export function TrashView({
               清空回收站？
             </h3>
             <p className="text-sm mb-6" style={{ color: 'var(--mi-text-secondary)' }}>
-              将永久删除 {notes.length} 条笔记，此操作无法撤销
+              将永久删除 {notes.length} 条胶囊，此操作无法撤销
             </p>
             <div className="flex gap-3">
               <button

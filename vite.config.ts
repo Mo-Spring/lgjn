@@ -9,6 +9,10 @@ const copyAssets = () => {
   return {
     name: 'copy-assets',
     closeBundle: () => {
+      const distDir = path.resolve('dist');
+      if (!fs.existsSync(distDir)) {
+        fs.mkdirSync(distDir, { recursive: true });
+      }
       const filesToCopy = ['icon.svg', 'manifest.json', 'sw.js'];
       filesToCopy.forEach(file => {
         try {

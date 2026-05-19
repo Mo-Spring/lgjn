@@ -1,5 +1,5 @@
 // ============================================================
-// components/EmptyState.tsx — 小米笔记风格空状态
+// components/EmptyState.tsx — 灵感胶囊风格空状态
 // ============================================================
 
 import React from 'react';
@@ -39,7 +39,7 @@ export function EmptyState({ hasNotes, hasSearch }: Props) {
       {hasSearch ? (
         <>
           <p className="text-sm font-medium mb-1" style={{ color: 'var(--mi-text-secondary)' }}>
-            没有找到匹配的笔记
+            没有找到匹配的胶囊
           </p>
           <p className="text-xs" style={{ color: 'var(--mi-text-tertiary)' }}>
             试试其他关键词
@@ -48,7 +48,7 @@ export function EmptyState({ hasNotes, hasSearch }: Props) {
       ) : hasNotes ? (
         <>
           <p className="text-sm font-medium mb-1" style={{ color: 'var(--mi-text-secondary)' }}>
-            当前分类没有笔记
+            当前分类没有胶囊
           </p>
           <p className="text-xs" style={{ color: 'var(--mi-text-tertiary)' }}>
             点击 + 按钮记录灵感
@@ -57,7 +57,7 @@ export function EmptyState({ hasNotes, hasSearch }: Props) {
       ) : (
         <>
           <p className="text-sm font-medium mb-1" style={{ color: 'var(--mi-text-secondary)' }}>
-            还没有笔记
+            还没有胶囊
           </p>
           <p className="text-xs" style={{ color: 'var(--mi-text-tertiary)' }}>
             点击右下角 + 按钮，记录你的第一个灵感

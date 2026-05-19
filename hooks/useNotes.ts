@@ -1,5 +1,5 @@
 // ============================================================
-// hooks/useNotes.ts — 笔记 CRUD、软删除、恢复、批量操作
+// hooks/useNotes.ts — 胶囊 CRUD、软删除、恢复、批量操作
 // ============================================================
 
 import { useState, useEffect, useCallback } from 'react';
@@ -20,7 +20,7 @@ export function useNotes() {
   const [trashNotes, setTrashNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
 
-  /** 从数据库加载笔记 */
+  /** 从数据库加载胶囊 */
   const reload = useCallback(async () => {
     try {
       const [active, trash] = await Promise.all([
@@ -38,7 +38,7 @@ export function useNotes() {
     reload();
   }, [reload]);
 
-  /** 创建新笔记 */
+  /** 创建新胶囊 */
   const createNote = useCallback(
     async (partial?: Partial<Note>): Promise<Note> => {
       const now = Date.now();
@@ -60,7 +60,7 @@ export function useNotes() {
     []
   );
 
-  /** 更新笔记 */
+  /** 更新胶囊 */
   const updateNote = useCallback(async (id: string, changes: Partial<Note>) => {
     setNotes((prev) => {
       const idx = prev.findIndex((n) => n.id === id);
@@ -73,7 +73,7 @@ export function useNotes() {
     });
   }, []);
 
-  /** 软删除笔记（移到回收站） */
+  /** 软删除胶囊（移到回收站） */
   const softDelete = useCallback(async (id: string) => {
     let deletedNote: Note | undefined;
     setNotes((prev) => {

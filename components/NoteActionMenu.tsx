@@ -1,5 +1,5 @@
 // ============================================================
-// components/NoteActionMenu.tsx — 小米笔记风格操作菜单
+// components/NoteActionMenu.tsx — 灵感胶囊风格操作菜单
 // ============================================================
 
 import React from 'react';

@@ -1,5 +1,5 @@
 // ============================================================
-// components/Toast.tsx — 小米笔记风格 Toast 通知
+// components/Toast.tsx — 灵感胶囊风格 Toast 通知
 // ============================================================
 
 import React, { useEffect, useState } from 'react';

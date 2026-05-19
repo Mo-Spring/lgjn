@@ -1,5 +1,5 @@
 // ============================================================
-// components/EditorModal.tsx — 小米笔记风格编辑器
+// components/EditorModal.tsx — 灵感胶囊风格编辑器
 // 全屏滑入、自动保存、下拉关闭
 // ============================================================
 
@@ -342,7 +342,7 @@ export function EditorModal({
             {content.length > 0 ? `${content.length} 字` : ''}
           </span>
           <span className="text-[11px]" style={{ color: 'var(--mi-text-tertiary)' }}>
-            {currentNote ? `编辑于 ${formatTime(currentNote.updatedAt)}` : '新建笔记'}
+            {currentNote ? `编辑于 ${formatTime(currentNote.updatedAt)}` : '新建胶囊'}
           </span>
         </div>
       </div>

@@ -1,6 +1,6 @@
 {
-  "name": "小米笔记",
-  "short_name": "笔记",
+  "name": "灵感胶囊",
+  "short_name": "灵感胶囊",
   "start_url": "./",
   "id": "mi-notes-local",
   "display": "standalone",

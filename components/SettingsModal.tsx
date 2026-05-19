@@ -1,5 +1,5 @@
 // ============================================================
-// components/SettingsModal.tsx — 小米笔记风格设置
+// components/SettingsModal.tsx — 灵感胶囊风格设置
 // ============================================================
 
 import React, { useState, useRef } from 'react';
@@ -68,7 +68,7 @@ export function SettingsModal({
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `笔记备份-${new Date().toISOString().slice(0, 10)}.json`;
+      a.download = `灵感胶囊备份-${new Date().toISOString().slice(0, 10)}.json`;
       a.click();
       URL.revokeObjectURL(url);
     } catch (e) {
@@ -173,7 +173,7 @@ export function SettingsModal({
                   <Tag className="w-10 h-10 mb-3" style={{ color: 'var(--mi-border)' }} />
                   <p className="text-sm mb-1" style={{ color: 'var(--mi-text-tertiary)' }}>还没有分类</p>
                   <p className="text-xs" style={{ color: 'var(--mi-text-tertiary)', opacity: 0.6 }}>
-                    创建分类来整理你的笔记
+                    创建分类来整理你的胶囊
                   </p>
                 </div>
               ) : (
@@ -262,7 +262,7 @@ export function SettingsModal({
             <div className="flex items-center justify-center gap-2 mb-2">
               <Smartphone className="w-4 h-4" style={{ color: 'var(--mi-text-tertiary)' }} />
               <span className="text-xs font-medium" style={{ color: 'var(--mi-text-tertiary)' }}>
-                小米笔记 · 本地版
+                灵感胶囊 · 本地版
               </span>
             </div>
             <p className="text-[11px]" style={{ color: 'var(--mi-text-tertiary)', opacity: 0.5 }}>

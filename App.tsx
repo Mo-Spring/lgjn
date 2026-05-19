@@ -1,5 +1,5 @@
 // ============================================================
-// App.tsx — 小米笔记风格 主应用
+// App.tsx — 灵感胶囊风格 主应用
 // ============================================================
 
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
@@ -31,7 +31,6 @@ import { ToastContainer } from './components/Toast';
 // Capacitor 插件（仅在原生环境生效）
 let AppPlugin: any = null;
 let StatusBarPlugin: any = null;
-let NavigationBarPlugin: any = null;
 
 async function loadCapacitorPlugins() {
   try {
@@ -41,11 +40,6 @@ async function loadCapacitorPlugins() {
   try {
     const sbMod = await import('@capacitor/status-bar');
     StatusBarPlugin = sbMod.StatusBar;
-  } catch {}
-  try {
-    // NavigationBar 可能不存在，忽略
-    const nbMod = await import('@capacitor/navigation-bar' as any);
-    NavigationBarPlugin = nbMod.NavigationBar;
   } catch {}
 }
 
@@ -90,13 +84,6 @@ export default function App() {
           await StatusBarPlugin.setBackgroundColor({ color: bgColor });
           await StatusBarPlugin.setStyle({ style: isDark ? 'DARK' : 'LIGHT' });
           await StatusBarPlugin.setOverlaysWebView({ overlay: false });
-        } catch {}
-      }
-
-      // 导航栏（Android）
-      if (NavigationBarPlugin) {
-        try {
-          await NavigationBarPlugin.setColor({ color: bgColor });
         } catch {}
       }
 
@@ -199,7 +186,7 @@ export default function App() {
     const ids = Array.from(sel.selectedIds);
     notes.batchSoftDelete(ids);
     sel.clearSelection();
-    addToast(`已删除 ${ids.length} 条笔记`, 'info');
+    addToast(`已删除 ${ids.length} 条胶囊`, 'info');
   }, [sel, notes, addToast]);
 
   const copyNote = useCallback((note: Note) => {
@@ -228,7 +215,7 @@ export default function App() {
     <ErrorBoundary>
       <div className="min-h-screen" style={{ background: 'var(--mi-bg)', color: 'var(--mi-text-primary)' }}>
 
-        {/* ── Header — 小米笔记风格 ── */}
+        {/* ── Header — 灵感胶囊风格 ── */}
         <header className="sticky top-0 z-30" style={{ background: 'var(--mi-bg)' }}>
           {showSearch ? (
             /* 搜索模式 */
@@ -244,7 +231,7 @@ export default function App() {
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--mi-text-tertiary)' }} />
                   <input
                     type="text"
-                    placeholder="搜索笔记..."
+                    placeholder="搜索胶囊..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full pl-10 pr-10 py-2.5 rounded-xl text-sm outline-none border-0"
@@ -268,7 +255,7 @@ export default function App() {
             <div className="px-4 pb-2 pt-3" style={{ paddingTop: 'calc(12px + env(safe-area-inset-top, 0px))' }}>
               <div className="flex items-center justify-between mb-3">
                 <h1 className="text-[22px] font-bold" style={{ color: 'var(--mi-text-primary)' }}>
-                  笔记
+                  灵感胶囊
                 </h1>
                 <div className="flex items-center gap-0.5">
                   <button
@@ -453,7 +440,7 @@ export default function App() {
           onPermanentDelete={(id) => setConfirm({
             open: true,
             title: '永久删除？',
-            message: '此操作无法撤销，笔记将被永久删除',
+            message: '此操作无法撤销，胶囊将被永久删除',
             onConfirm: () => { notes.permanentDelete(id); setConfirm((d) => ({ ...d, open: false })); }
           })}
           onEmptyTrash={() => { notes.emptyTrash(); addToast('回收站已清空', 'info'); }}
