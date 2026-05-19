@@ -32,7 +32,7 @@ export function ConfirmDialog({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-5">
       <div className="absolute inset-0 bg-black/50" onClick={onCancel} />
       <div
-        className="relative w-full max-w-sm rounded-3xl p-7 animate-mi-editor-in"
+        className="relative w-full max-w-sm rounded-2xl p-7 animate-mi-editor-in"
         style={{ background: 'var(--mi-card)', boxShadow: 'var(--mi-shadow-float)' }}
       >
         <div className="flex items-center gap-3.5 mb-5">
@@ -50,14 +50,14 @@ export function ConfirmDialog({
         <div className="flex gap-3.5">
           <button
             onClick={onCancel}
-            className="flex-1 py-3 rounded-xl text-[15px] font-medium active:opacity-80 transition-opacity"
+            className="flex-1 py-3 rounded-2xl text-[15px] font-medium active:opacity-80 transition-opacity"
             style={{ background: 'var(--mi-bg)', color: 'var(--mi-text-primary)' }}
           >
             {cancelLabel}
           </button>
           <button
             onClick={onConfirm}
-            className="flex-1 py-3 rounded-xl text-[15px] font-medium text-white active:opacity-80 transition-opacity"
+            className="flex-1 py-3 rounded-2xl text-[15px] font-medium text-white active:opacity-80 transition-opacity"
             style={{
               background: variant === 'danger'
                 ? 'linear-gradient(135deg, #FF5555, #DD3333)'

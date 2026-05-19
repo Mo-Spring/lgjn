@@ -347,7 +347,7 @@ export default function App() {
               </div>
               <button
                 onClick={batchDelete}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-white text-[14px] font-medium active:opacity-80 transition-opacity"
+                className="flex items-center gap-2 px-5 py-2.5 rounded-2xl text-white text-[14px] font-medium active:opacity-80 transition-opacity"
                 style={{ background: 'linear-gradient(135deg, #FF5555, #DD3333)', boxShadow: '0 2px 8px rgba(255, 68, 68, 0.3)' }}
               >
                 <Trash2 className="w-4 h-4" />
@@ -392,21 +392,23 @@ export default function App() {
           )}
         </main>
 
-        {/* ── FAB ── */}
-        <button
-          onClick={() => openEditor()}
-          className="w-16 h-16 rounded-2xl text-white flex items-center justify-center active:scale-90 transition-all ripple-btn"
-          style={{
-            position: 'fixed',
-            right: '22px',
-            bottom: 'calc(32px + env(safe-area-inset-bottom, 0px))',
-            zIndex: 9999,
-            background: 'linear-gradient(135deg, #FF8533, #FF5500)',
-            boxShadow: '0 6px 24px rgba(255, 106, 0, 0.4), 0 2px 8px rgba(255, 106, 0, 0.2)',
-          }}
-        >
-          <Plus className="w-7 h-7" strokeWidth={2.5} />
-        </button>
+        {/* ── FAB — 仅在主页显示 ── */}
+        {!isEditorOpen && !showSettings && !showTrash && !showSearch && (
+          <button
+            onClick={() => openEditor()}
+            className="w-16 h-16 rounded-full text-white flex items-center justify-center active:scale-90 transition-all ripple-btn"
+            style={{
+              position: 'fixed',
+              right: '22px',
+              bottom: 'calc(32px + env(safe-area-inset-bottom, 0px))',
+              zIndex: 9999,
+              background: 'linear-gradient(135deg, #FF8533, #FF5500)',
+              boxShadow: '0 6px 24px rgba(255, 106, 0, 0.4), 0 2px 8px rgba(255, 106, 0, 0.2)',
+            }}
+          >
+            <Plus className="w-7 h-7" strokeWidth={2.5} />
+          </button>
+        )}
 
         {/* ── Modals ── */}
         <EditorModal

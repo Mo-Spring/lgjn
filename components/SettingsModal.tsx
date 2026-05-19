@@ -94,7 +94,7 @@ export function SettingsModal({
     <div className="fixed inset-0 z-50">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
       <div
-        className="absolute inset-x-0 bottom-0 max-h-[90vh] rounded-t-3xl flex flex-col overflow-hidden animate-mi-editor-in"
+        className="absolute inset-x-0 bottom-0 max-h-[90vh] rounded-t-2xl flex flex-col overflow-hidden animate-mi-editor-in"
         style={{ background: 'var(--mi-bg)', boxShadow: 'var(--mi-shadow-float)' }}
       >
         {/* 头部 */}
@@ -154,13 +154,13 @@ export function SettingsModal({
                   value={newCatName}
                   onChange={(e) => setNewCatName(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleCreateCategory()}
-                  className="flex-1 px-4 py-2.5 rounded-xl text-[15px] outline-none border-0"
+                  className="flex-1 px-4 py-2.5 rounded-2xl text-[15px] outline-none border-0"
                   style={{ background: 'var(--mi-bg)', color: 'var(--mi-text-primary)' }}
                 />
                 <button
                   onClick={handleCreateCategory}
                   disabled={!newCatName.trim()}
-                  className="w-10 h-10 rounded-xl flex items-center justify-center text-white disabled:opacity-40 transition-opacity"
+                  className="w-10 h-10 rounded-2xl flex items-center justify-center text-white disabled:opacity-40 transition-opacity"
                   style={{ background: 'var(--mi-orange)' }}
                 >
                   <FolderPlus className="w-5 h-5" />

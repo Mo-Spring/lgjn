@@ -14,7 +14,7 @@ export function EmptyState({ hasNotes, hasSearch }: Props) {
     <div className="flex flex-col items-center justify-center py-28 text-center">
       <div className="animate-mi-float mb-8">
         <div
-          className="w-24 h-24 rounded-3xl flex items-center justify-center"
+          className="w-24 h-24 rounded-2xl flex items-center justify-center"
           style={{ background: 'var(--mi-card)', boxShadow: 'var(--mi-shadow-lg)' }}
         >
           <svg width="48" height="48" viewBox="0 0 40 40" fill="none">

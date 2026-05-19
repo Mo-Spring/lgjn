@@ -197,7 +197,7 @@ export function EditorModal({
       <div
         className={`
           absolute inset-x-0 bottom-0 top-6
-          rounded-t-3xl flex flex-col overflow-hidden
+          rounded-t-2xl flex flex-col overflow-hidden
           ${isClosing ? 'animate-mi-editor-out' : 'animate-mi-editor-in'}
         `}
         style={{
@@ -287,7 +287,7 @@ export function EditorModal({
             <div className="p-2.5 rounded-2xl" style={{ background: 'var(--mi-card)', boxShadow: 'var(--mi-shadow-lg)' }}>
               <button
                 onClick={() => handleCategoryChange('')}
-                className="w-full flex items-center justify-between px-4 py-3 rounded-xl text-[15px] transition-colors active:bg-gray-100 dark:active:bg-gray-700"
+                className="w-full flex items-center justify-between px-4 py-3 rounded-2xl text-[15px] transition-colors active:bg-gray-100 dark:active:bg-gray-700"
                 style={{ color: !category ? 'var(--mi-orange)' : 'var(--mi-text-primary)' }}
               >
                 <span>未分类</span>
@@ -297,7 +297,7 @@ export function EditorModal({
                 <button
                   key={c.id}
                   onClick={() => handleCategoryChange(c.id)}
-                  className="w-full flex items-center justify-between px-4 py-3 rounded-xl text-[15px] transition-colors active:bg-gray-100 dark:active:bg-gray-700"
+                  className="w-full flex items-center justify-between px-4 py-3 rounded-2xl text-[15px] transition-colors active:bg-gray-100 dark:active:bg-gray-700"
                   style={{ color: category === c.id ? 'var(--mi-orange)' : 'var(--mi-text-primary)' }}
                 >
                   <span>{c.name}</span>

@@ -100,7 +100,7 @@ export function TrashView({
         <div className="fixed inset-0 z-50 flex items-center justify-center p-5">
           <div className="absolute inset-0 bg-black/50" onClick={() => setConfirmEmpty(false)} />
           <div
-            className="relative w-full max-w-sm rounded-3xl p-7 animate-mi-editor-in"
+            className="relative w-full max-w-sm rounded-2xl p-7 animate-mi-editor-in"
             style={{ background: 'var(--mi-card)', boxShadow: 'var(--mi-shadow-float)' }}
           >
             <h3 className="text-xl font-semibold mb-3" style={{ color: 'var(--mi-text-primary)' }}>
@@ -112,14 +112,14 @@ export function TrashView({
             <div className="flex gap-3.5">
               <button
                 onClick={() => setConfirmEmpty(false)}
-                className="flex-1 py-3 rounded-xl text-[15px] font-medium active:opacity-80 transition-opacity"
+                className="flex-1 py-3 rounded-2xl text-[15px] font-medium active:opacity-80 transition-opacity"
                 style={{ background: 'var(--mi-bg)', color: 'var(--mi-text-primary)' }}
               >
                 取消
               </button>
               <button
                 onClick={() => { onEmptyTrash(); setConfirmEmpty(false); }}
-                className="flex-1 py-3 rounded-xl text-[15px] font-medium text-white active:opacity-80 transition-opacity"
+                className="flex-1 py-3 rounded-2xl text-[15px] font-medium text-white active:opacity-80 transition-opacity"
                 style={{ background: 'linear-gradient(135deg, #FF5555, #DD3333)', boxShadow: '0 2px 8px rgba(255, 68, 68, 0.3)' }}
               >
                 清空
