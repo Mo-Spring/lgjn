@@ -92,19 +92,17 @@ export function useNotes() {
 
   /** 从回收站恢复 */
   const restoreNote = useCallback(async (id: string) => {
-    let restored: Note | undefined;
-    setTrashNotes((prev) => {
-      const idx = prev.findIndex((n) => n.id === id);
-      if (idx === -1) return prev;
-      restored = { ...prev[idx], deletedAt: null, updatedAt: Date.now() };
-      dbSave(restored); // fire-and-forget
-      return prev.filter((n) => n.id !== id);
-    });
-    if (restored) {
-      setNotes((prev) => [restored!, ...prev]);
-    }
+    const target = trashNotes.find((n) => n.id === id);
+    if (!target) return undefined;
+
+    const restored: Note = { ...target, deletedAt: null, updatedAt: Date.now() };
+    dbSave(restored);
+
+    setTrashNotes((prev) => prev.filter((n) => n.id !== id));
+    setNotes((prev) => [restored, ...prev]);
+
     return restored;
-  }, []);
+  }, [trashNotes]);
 
   /** 永久删除 */
   const permanentDelete = useCallback(async (id: string) => {
@@ -122,23 +120,19 @@ export function useNotes() {
   /** 批量软删除 */
   const batchSoftDelete = useCallback(async (ids: string[]) => {
     const deletedNotes: Note[] = [];
-    setNotes((prev) => {
-      const next: Note[] = [];
-      for (const n of prev) {
-        if (ids.includes(n.id)) {
-          const dn = { ...n, deletedAt: Date.now() };
-          dbSave(dn);
-          deletedNotes.push(dn);
-        } else {
-          next.push(n);
-        }
+    for (const n of notes) {
+      if (ids.includes(n.id)) {
+        const dn: Note = { ...n, deletedAt: Date.now() };
+        dbSave(dn);
+        deletedNotes.push(dn);
       }
-      return next;
-    });
+    }
     if (deletedNotes.length) {
+      const deletedIds = new Set(ids);
+      setNotes((prev) => prev.filter((n) => !deletedIds.has(n.id)));
       setTrashNotes((prev) => [...deletedNotes, ...prev]);
     }
-  }, []);
+  }, [notes]);
 
   /** 切换置顶 */
   const togglePin = useCallback(async (id: string) => {
