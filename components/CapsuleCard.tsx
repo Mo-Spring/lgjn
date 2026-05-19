@@ -274,6 +274,7 @@ export function CapsuleCard({
         transition-all duration-200 ease-out select-none touch-pan-y
         ${isSelected ? 'ring-2 ring-orange-500/50' : ''}
         active:scale-[0.97]
+        break-inside-avoid
       `}
       style={{ boxShadow: 'var(--mi-shadow)' }}
     >

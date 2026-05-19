@@ -63,17 +63,21 @@ export default function App() {
   const [menuPos, setMenuPos] = useState({ x: 0, y: 0 });
   const [showSearch, setShowSearch] = useState(false);
   const [confirm, setConfirm] = useState({ open: false, title: '', message: '', onConfirm: () => {} });
+  const [pluginsLoaded, setPluginsLoaded] = useState(false);
 
   // ── 初始化存储 ──
   useEffect(() => { initStorage(); }, []);
 
   // ── 加载 Capacitor 插件 ──
   useEffect(() => {
-    loadCapacitorPlugins();
+    loadCapacitorPlugins().then(() => {
+      setPluginsLoaded(true);
+    });
   }, []);
 
   // ── 状态栏 + 导航栏颜色跟随主题 ──
   useEffect(() => {
+    if (!pluginsLoaded) return;
     const applyBarColors = async () => {
       const isDark = theme === 'dark';
       const bgColor = isDark ? '#1A1A1A' : '#F5F5F5';
@@ -92,10 +96,11 @@ export default function App() {
       if (meta) meta.setAttribute('content', bgColor);
     };
     applyBarColors();
-  }, [theme]);
+  }, [theme, pluginsLoaded]);
 
   // ── 系统返回手势处理 ──
   useEffect(() => {
+    if (!pluginsLoaded) return;
     let listener: any = null;
 
     const setupBackHandler = async () => {
@@ -145,7 +150,7 @@ export default function App() {
     return () => {
       if (listener) listener.remove();
     };
-  }, [confirm.open, menuNote, showSettings, showTrash, isEditorOpen, showSearch, sel.isSelectionMode]);
+  }, [pluginsLoaded, confirm.open, menuNote, showSettings, showTrash, isEditorOpen, showSearch, sel.isSelectionMode]);
 
   // ── 筛选 ──
   const filtered = useMemo(() => {
@@ -359,7 +364,7 @@ export default function App() {
               {filtered.map((note, idx) => (
                 <div
                   key={note.id}
-                  className="animate-mi-slide-up opacity-0"
+                  className="animate-mi-slide-up opacity-0 break-inside-avoid"
                   style={{ animationDelay: `${Math.min(idx * 0.03, 0.18)}s` }}
                 >
                   <CapsuleCard
