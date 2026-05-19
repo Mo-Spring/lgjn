@@ -222,7 +222,7 @@ export default function App() {
     return (
       <div className="fixed inset-0 flex items-center justify-center" style={{ background: 'var(--mi-bg)' }}>
         <div className="flex flex-col items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center animate-pulse shadow-lg">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-400 to-indigo-600 flex items-center justify-center animate-pulse shadow-lg">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
               <path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5" stroke="white" strokeWidth="2" strokeLinecap="round"/>
               <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -329,7 +329,7 @@ export default function App() {
                     className="px-5 py-2 rounded-full text-[14px] font-medium whitespace-nowrap transition-all"
                     style={{
                       background: activeCategory === cat.id
-                        ? 'linear-gradient(135deg, #FF8533, #FF6A00)'
+                        ? 'linear-gradient(135deg, #818CF8, #6366F1)'
                         : 'var(--mi-card)',
                       color: activeCategory === cat.id ? '#FFFFFF' : 'var(--mi-text-secondary)',
                       border: activeCategory === cat.id ? 'none' : '1px solid var(--mi-border)',
@@ -420,8 +420,8 @@ export default function App() {
               right: '22px',
               bottom: 'calc(32px + env(safe-area-inset-bottom, 0px))',
               zIndex: 9999,
-              background: 'linear-gradient(135deg, #FF8533, #FF5500)',
-              boxShadow: '0 6px 24px rgba(255, 106, 0, 0.4), 0 2px 8px rgba(255, 106, 0, 0.2)',
+              background: 'linear-gradient(135deg, #818CF8, #6366F1)',
+              boxShadow: '0 6px 24px rgba(99, 102, 241, 0.4), 0 2px 8px rgba(99, 102, 241, 0.2)',
             }}
           >
             <Plus className="w-7 h-7" strokeWidth={2.5} />

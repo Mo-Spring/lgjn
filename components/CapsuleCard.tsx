@@ -196,7 +196,7 @@ export function CapsuleCard({
           ${bgClass} rounded-2xl p-5 cursor-pointer
           transition-all duration-200 ease-out select-none touch-pan-y
           flex items-start gap-4
-          ${isSelected ? 'ring-2 ring-orange-500/50' : ''}
+          ${isSelected ? 'ring-2 ring-indigo-500/50' : ''}
           active:scale-[0.98]
         `}
         style={{ boxShadow: 'var(--mi-shadow)' }}
@@ -272,7 +272,7 @@ export function CapsuleCard({
       className={`
         ${bgClass} rounded-2xl p-5 cursor-pointer
         transition-all duration-200 ease-out select-none touch-pan-y
-        ${isSelected ? 'ring-2 ring-orange-500/50' : ''}
+        ${isSelected ? 'ring-2 ring-indigo-500/50' : ''}
         active:scale-[0.97]
         break-inside-avoid
       `}

@@ -61,10 +61,10 @@ export function ConfirmDialog({
             style={{
               background: variant === 'danger'
                 ? 'linear-gradient(135deg, #FF5555, #DD3333)'
-                : 'linear-gradient(135deg, #FF8533, #FF6A00)',
+                : 'linear-gradient(135deg, #818CF8, #6366F1)',
               boxShadow: variant === 'danger'
                 ? '0 2px 8px rgba(255, 68, 68, 0.3)'
-                : '0 2px 8px rgba(255, 106, 0, 0.3)',
+                : '0 2px 8px rgba(99, 102, 241, 0.3)',
             }}
           >
             {confirmLabel}
