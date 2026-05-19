@@ -1,6 +1,6 @@
 // ============================================================
 // components/CapsuleCard.tsx — 小米笔记风格卡片
-// 瀑布流布局、滑动删除、长按菜单、搜索高亮
+// 网格/列表两种视图、长按弹出操作菜单、搜索高亮
 // ============================================================
 
 import React, { useRef, useCallback, useState, useEffect } from 'react';
@@ -76,9 +76,6 @@ export function CapsuleCard({
   const longPressTimer = useRef<number | null>(null);
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   const touchMovedRef = useRef(false);
-  const [swipeX, setSwipeX] = useState(0);
-  const [isSwiping, setIsSwiping] = useState(false);
-  const swipeRef = useRef<{ startX: number; currentX: number } | null>(null);
 
   const category = categories.find((c) => c.id === note.category);
 
@@ -93,13 +90,12 @@ export function CapsuleCard({
     return () => clearLongPress();
   }, [clearLongPress]);
 
-  // ── 触摸事件 ──
+  // ── 触摸事件：仅长按触发菜单 ──
   const handleTouchStart = useCallback(
     (e: React.TouchEvent) => {
       const touch = e.touches[0];
       touchStartRef.current = { x: touch.clientX, y: touch.clientY };
       touchMovedRef.current = false;
-      swipeRef.current = { startX: touch.clientX, currentX: touch.clientX };
 
       clearLongPress();
       longPressTimer.current = window.setTimeout(() => {
@@ -127,15 +123,6 @@ export function CapsuleCard({
           clearLongPress();
         }
       }
-
-      if (swipeRef.current) {
-        swipeRef.current.currentX = touch.clientX;
-        const delta = swipeRef.current.currentX - swipeRef.current.startX;
-        if (delta < 0) {
-          setIsSwiping(true);
-          setSwipeX(Math.max(delta, -100));
-        }
-      }
     },
     [clearLongPress]
   );
@@ -143,18 +130,47 @@ export function CapsuleCard({
   const handleTouchEnd = useCallback(() => {
     clearLongPress();
     touchStartRef.current = null;
-    swipeRef.current = null;
+  }, [clearLongPress]);
 
-    if (isSwiping) {
-      if (swipeX < -60) {
-        onDelete(note.id);
-      }
-      setSwipeX(0);
-      setIsSwiping(false);
+  // ── 鼠标长按（桌面端） ──
+  const mouseTimer = useRef<number | null>(null);
+  const mouseDownRef = useRef(false);
+
+  const handleMouseDown = useCallback(
+    (e: React.MouseEvent) => {
+      mouseDownRef.current = false;
+      mouseTimer.current = window.setTimeout(() => {
+        mouseDownRef.current = true;
+        if (isSelectionMode) {
+          onToggleSelect(note.id);
+        } else {
+          onMenu(note, { x: e.clientX, y: e.clientY });
+        }
+      }, 500);
+    },
+    [note, isSelectionMode, onMenu, onToggleSelect]
+  );
+
+  const handleMouseUp = useCallback(() => {
+    if (mouseTimer.current !== null) {
+      clearTimeout(mouseTimer.current);
+      mouseTimer.current = null;
     }
-  }, [isSwiping, swipeX, note.id, onDelete, clearLongPress]);
+  }, []);
 
+  const handleMouseLeave = useCallback(() => {
+    if (mouseTimer.current !== null) {
+      clearTimeout(mouseTimer.current);
+      mouseTimer.current = null;
+    }
+  }, []);
+
+  // ── 点击 ──
   const handleClick = useCallback(() => {
+    if (mouseDownRef.current) {
+      mouseDownRef.current = false;
+      return;
+    }
     if (isSelectionMode) {
       onToggleSelect(note.id);
     } else {
@@ -164,44 +180,34 @@ export function CapsuleCard({
 
   const bgClass = colorClass[note.color] || colorClass.default;
 
-  return (
-    <div className="relative overflow-hidden rounded-xl break-inside-avoid mb-2.5">
-      {/* 滑动删除背景 */}
-      <div
-        className="absolute inset-y-0 right-0 flex items-center justify-center rounded-xl"
-        style={{ width: 80, background: '#FF4444' }}
-      >
-        <Trash2 className="w-5 h-5 text-white" />
-      </div>
-
+  // ── 列表视图 ──
+  if (viewMode === 'list') {
+    return (
       <div
         ref={cardRef}
         onClick={handleClick}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
+        onMouseDown={handleMouseDown}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseLeave}
         className={`
-          ${bgClass}
-          rounded-xl p-3.5 cursor-pointer
-          transition-all duration-200 ease-out
-          select-none touch-pan-y
-          ${viewMode === 'grid' ? '' : 'flex gap-3'}
-          ${isSelected ? 'ring-2 ring-offset-1' : ''}
+          ${bgClass} rounded-xl p-3.5 cursor-pointer
+          transition-all duration-200 ease-out select-none touch-pan-y
+          flex items-start gap-3
+          ${isSelected ? 'ring-2 ring-orange-500/50' : ''}
+          active:scale-[0.98]
         `}
-        style={{
-          transform: isSwiping ? `translateX(${swipeX}px)` : undefined,
-          transition: isSwiping ? 'none' : undefined,
-          boxShadow: 'var(--mi-shadow)',
-          ...(isSelected ? { ringColor: 'var(--mi-orange)', ringOffsetColor: 'var(--mi-bg)' } : {}),
-        }}
+        style={{ boxShadow: 'var(--mi-shadow)' }}
       >
         {/* 选择指示器 */}
         {isSelectionMode && (
-          <div className="absolute top-2.5 right-2.5 animate-mi-check-in">
+          <div className="flex-shrink-0 mt-0.5 animate-mi-check-in">
             <div
               className="w-5 h-5 rounded-full flex items-center justify-center transition-all"
               style={{
-                background: isSelected ? 'var(--mi-orange)' : 'var(--mi-border)',
+                background: isSelected ? 'var(--mi-orange)' : 'transparent',
                 border: isSelected ? 'none' : '2px solid var(--mi-text-tertiary)',
               }}
             >
@@ -210,44 +216,119 @@ export function CapsuleCard({
           </div>
         )}
 
-        {/* 置顶标记 */}
-        {note.pinned && !isSelectionMode && (
-          <div className="flex items-center gap-1 mb-2">
-            <Pin className="w-3 h-3 fill-current" style={{ color: 'var(--mi-orange)' }} />
-            <span className="text-[10px] font-medium" style={{ color: 'var(--mi-orange)' }}>置顶</span>
-          </div>
-        )}
-
-        {/* 标题 */}
-        {note.title && (
-          <h3 className="font-semibold text-sm mb-1.5 line-clamp-2" style={{ color: 'var(--mi-text-primary)' }}>
-            {highlightText(note.title, searchQuery)}
-          </h3>
-        )}
-
-        {/* 内容预览 */}
-        {note.content && (
-          <p className="text-xs line-clamp-4 leading-relaxed" style={{ color: 'var(--mi-text-secondary)' }}>
-            {highlightText(note.content, searchQuery)}
-          </p>
-        )}
-
-        {/* 底部：分类 + 时间 */}
-        <div className="flex items-center justify-between mt-2.5 pt-2" style={{ borderTop: '1px solid var(--mi-divider)' }}>
-          {category ? (
-            <span
-              className="text-[10px] px-2 py-0.5 rounded-full font-medium"
-              style={{ background: 'var(--mi-hover)', color: 'var(--mi-text-tertiary)' }}
-            >
-              {category.name}
-            </span>
-          ) : (
-            <span />
+        <div className="flex-1 min-w-0">
+          {/* 置顶标记 */}
+          {note.pinned && !isSelectionMode && (
+            <div className="flex items-center gap-1 mb-1">
+              <Pin className="w-3 h-3 fill-current" style={{ color: 'var(--mi-orange)' }} />
+              <span className="text-[10px] font-medium" style={{ color: 'var(--mi-orange)' }}>置顶</span>
+            </div>
           )}
-          <span className="text-[10px]" style={{ color: 'var(--mi-text-tertiary)' }}>
-            {formatTime(note.updatedAt)}
-          </span>
+
+          {/* 标题 */}
+          {note.title && (
+            <h3 className="font-semibold text-sm mb-1 truncate" style={{ color: 'var(--mi-text-primary)' }}>
+              {highlightText(note.title, searchQuery)}
+            </h3>
+          )}
+
+          {/* 内容预览 */}
+          {note.content && (
+            <p className="text-xs line-clamp-2 leading-relaxed" style={{ color: 'var(--mi-text-secondary)' }}>
+              {highlightText(note.content, searchQuery)}
+            </p>
+          )}
+
+          {/* 底部 */}
+          <div className="flex items-center gap-2 mt-2">
+            {category && (
+              <span
+                className="text-[10px] px-2 py-0.5 rounded-full font-medium"
+                style={{ background: 'var(--mi-hover)', color: 'var(--mi-text-tertiary)' }}
+              >
+                {category.name}
+              </span>
+            )}
+            <span className="text-[10px]" style={{ color: 'var(--mi-text-tertiary)' }}>
+              {formatTime(note.updatedAt)}
+            </span>
+          </div>
         </div>
+      </div>
+    );
+  }
+
+  // ── 网格视图 ──
+  return (
+    <div
+      ref={cardRef}
+      onClick={handleClick}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      onMouseDown={handleMouseDown}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseLeave}
+      className={`
+        ${bgClass} rounded-xl p-3.5 cursor-pointer
+        transition-all duration-200 ease-out select-none touch-pan-y
+        ${isSelected ? 'ring-2 ring-orange-500/50' : ''}
+        active:scale-[0.97]
+      `}
+      style={{ boxShadow: 'var(--mi-shadow)' }}
+    >
+      {/* 选择指示器 */}
+      {isSelectionMode && (
+        <div className="absolute top-2.5 right-2.5 animate-mi-check-in">
+          <div
+            className="w-5 h-5 rounded-full flex items-center justify-center transition-all"
+            style={{
+              background: isSelected ? 'var(--mi-orange)' : 'transparent',
+              border: isSelected ? 'none' : '2px solid var(--mi-text-tertiary)',
+            }}
+          >
+            {isSelected && <Check className="w-3 h-3 text-white" strokeWidth={3} />}
+          </div>
+        </div>
+      )}
+
+      {/* 置顶标记 */}
+      {note.pinned && !isSelectionMode && (
+        <div className="flex items-center gap-1 mb-2">
+          <Pin className="w-3 h-3 fill-current" style={{ color: 'var(--mi-orange)' }} />
+          <span className="text-[10px] font-medium" style={{ color: 'var(--mi-orange)' }}>置顶</span>
+        </div>
+      )}
+
+      {/* 标题 */}
+      {note.title && (
+        <h3 className="font-semibold text-sm mb-1.5 line-clamp-2" style={{ color: 'var(--mi-text-primary)' }}>
+          {highlightText(note.title, searchQuery)}
+        </h3>
+      )}
+
+      {/* 内容预览 */}
+      {note.content && (
+        <p className="text-xs line-clamp-4 leading-relaxed" style={{ color: 'var(--mi-text-secondary)' }}>
+          {highlightText(note.content, searchQuery)}
+        </p>
+      )}
+
+      {/* 底部：分类 + 时间 */}
+      <div className="flex items-center justify-between mt-2.5 pt-2" style={{ borderTop: '1px solid var(--mi-divider)' }}>
+        {category ? (
+          <span
+            className="text-[10px] px-2 py-0.5 rounded-full font-medium"
+            style={{ background: 'var(--mi-hover)', color: 'var(--mi-text-tertiary)' }}
+          >
+            {category.name}
+          </span>
+        ) : (
+          <span />
+        )}
+        <span className="text-[10px]" style={{ color: 'var(--mi-text-tertiary)' }}>
+          {formatTime(note.updatedAt)}
+        </span>
       </div>
     </div>
   );

@@ -6,6 +6,7 @@ import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import {
   Plus, Search, Settings, Trash2, X,
   ArrowLeft, CheckSquare, MoreHorizontal,
+  LayoutGrid, List,
 } from 'lucide-react';
 
 import type { Note, ViewMode } from './types';
@@ -169,6 +170,16 @@ export default function App() {
                   笔记
                 </h1>
                 <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
+                    className="w-9 h-9 rounded-full flex items-center justify-center active:bg-gray-200/60 dark:active:bg-gray-700/60 transition-colors"
+                  >
+                    {viewMode === 'grid' ? (
+                      <List className="w-[18px] h-[18px]" style={{ color: 'var(--mi-text-secondary)' }} />
+                    ) : (
+                      <LayoutGrid className="w-[18px] h-[18px]" style={{ color: 'var(--mi-text-secondary)' }} />
+                    )}
+                  </button>
                   <button
                     onClick={() => setShowSearch(true)}
                     className="w-9 h-9 rounded-full flex items-center justify-center active:bg-gray-200/60 dark:active:bg-gray-700/60 transition-colors"
