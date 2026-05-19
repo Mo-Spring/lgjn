@@ -334,7 +334,7 @@ export default function App() {
                       color: activeCategory === cat.id ? '#FFFFFF' : 'var(--mi-text-secondary)',
                       border: activeCategory === cat.id ? 'none' : '1px solid var(--mi-border)',
                       boxShadow: activeCategory === cat.id
-                        ? '0 2px 8px rgba(255, 106, 0, 0.25)'
+                        ? '0 2px 8px rgba(99, 102, 241, 0.25)'
                         : 'var(--mi-shadow)',
                     }}
                   >
