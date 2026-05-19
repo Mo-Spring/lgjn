@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 
 import type { Note, ViewMode } from './types';
-import { initStorage } from './services/storageService';
+import { initStorage, getMeta, setMeta } from './services/storageService';
 
 import { useNotes } from './hooks/useNotes';
 import { useCategories } from './hooks/useCategories';
@@ -55,6 +55,7 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('all');
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
+  const [viewModeLoaded, setViewModeLoaded] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showTrash, setShowTrash] = useState(false);
   const [editingNote, setEditingNote] = useState<Note | null>(null);
@@ -67,6 +68,23 @@ export default function App() {
 
   // ── 初始化存储 ──
   useEffect(() => { initStorage(); }, []);
+
+  // ── 加载视图模式偏好 ──
+  useEffect(() => {
+    getMeta('viewMode').then((saved) => {
+      if (saved === 'grid' || saved === 'list') {
+        setViewMode(saved);
+      }
+      setViewModeLoaded(true);
+    });
+  }, []);
+
+  // ── 保存视图模式偏好 ──
+  useEffect(() => {
+    if (viewModeLoaded) {
+      setMeta('viewMode', viewMode);
+    }
+  }, [viewMode, viewModeLoaded]);
 
   // ── 加载 Capacitor 插件 ──
   useEffect(() => {
