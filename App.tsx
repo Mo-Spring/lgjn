@@ -286,10 +286,14 @@ export default function App() {
         {/* ── FAB — 小米风格橙色 ── */}
         <button
           onClick={() => openEditor()}
-          className="fixed right-5 bottom-7 w-14 h-14 rounded-full text-white flex items-center justify-center active:scale-90 transition-all z-20 shadow-lg ripple-btn"
+          className="w-14 h-14 rounded-full text-white flex items-center justify-center active:scale-90 transition-all shadow-lg ripple-btn"
           style={{
+            position: 'fixed',
+            right: '20px',
+            bottom: 'calc(28px + env(safe-area-inset-bottom, 0px))',
+            zIndex: 9999,
             background: 'linear-gradient(135deg, #FF8533, #FF6A00)',
-            boxShadow: '0 4px 16px rgba(255, 106, 0, 0.3)',
+            boxShadow: '0 4px 16px rgba(255, 106, 0, 0.35)',
           }}
         >
           <Plus className="w-6 h-6" strokeWidth={2.5} />
